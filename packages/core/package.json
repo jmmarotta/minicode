@@ -1,0 +1,16 @@
+{
+  "name": "@minicode/core",
+  "module": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "ai": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@tsconfig/node22": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
