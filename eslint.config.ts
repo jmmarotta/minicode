@@ -1,9 +1,8 @@
-import * as js from "@eslint/js";
-import * as globals from "globals";
-import tseslint from "typescript-eslint";
-import json from "@eslint/json";
-import markdown from "@eslint/markdown";
-import { defineConfig } from "eslint/config";
+import js from "@eslint/js"
+import globals from "globals"
+import tseslint from "typescript-eslint"
+import json from "@eslint/json"
+import { defineConfig } from "eslint/config"
 
 export default defineConfig([
   {
@@ -11,9 +10,24 @@ export default defineConfig([
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.browser },
+    rules: {
+      "no-empty": ["error", { allowEmptyCatch: true }],
+    },
   },
-  tseslint.configs.strict,
-  tseslint.configs.stylistic,
+  {
+    files: ["**/*.ts"],
+    extends: [js.configs.recommended, tseslint.configs.recommended],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "no-empty": ["error", { allowEmptyCatch: true }],
+    },
+  },
   {
     files: ["**/*.json"],
     ignores: ["package-lock.json"],
@@ -21,10 +35,4 @@ export default defineConfig([
     language: "json/json",
     extends: ["json/recommended"],
   },
-  {
-    files: ["**/*.md"],
-    plugins: { markdown },
-    language: "markdown/commonmark",
-    extends: ["markdown/recommended"],
-  },
-]);
+])
