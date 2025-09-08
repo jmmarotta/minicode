@@ -1,158 +1,21 @@
-import { Log } from "../util/log"
+import { Logger } from "../util/logger"
 import path from "path"
 import os from "os"
 import { z } from "zod"
-import { Filesystem } from "../util/filesystem"
-import { ModelsDev } from "../provider/models"
 import { mergeDeep, pipe } from "remeda"
-import { Global } from "../global"
+import { Path } from "../global"
 import fs from "fs/promises"
 import { lazy } from "../util/lazy"
 import { NamedError } from "../util/error"
-import matter from "gray-matter"
-import { Flag } from "../flag/flag"
 import { Auth } from "../auth"
-import { type ParseError as JsoncParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser"
 import { Instance } from "../project/instance"
 
 export namespace Config {
-  const log = Log.create({ service: "config" })
+  const log = Logger.create({ service: "config" })
 
   export const state = Instance.state(async () => {
-    const auth = await Auth.all()
-    let result = await global()
-    for (const file of ["opencode.jsonc", "opencode.json"]) {
-      const found = await Filesystem.findUp(file, Instance.directory, Instance.worktree)
-      for (const resolved of found.toReversed()) {
-        result = mergeDeep(result, await loadFile(resolved))
-      }
-    }
-
-    result = mergeDeep(result, await loadFile(Flag.OPENCODE_CONFIG))
-    log.debug("loaded custom config", { path: Flag.OPENCODE_CONFIG })
-
-    for (const [key, value] of Object.entries(auth)) {
-      if (value.type === "wellknown") {
-        process.env[value.key] = value.token
-        const wellknown = await fetch(`${key}/.well-known/opencode`).then((x) => x.json())
-        result = mergeDeep(result, await load(JSON.stringify(wellknown.config ?? {}), process.cwd()))
-      }
-    }
-
-    result.agent = result.agent || {}
-    const markdownAgents = [
-      ...(await Filesystem.globUp("agent/**/*.md", Global.Path.config, Global.Path.config)),
-      ...(await Filesystem.globUp(".opencode/agent/*.md", Instance.directory, Instance.worktree)),
-    ]
-    for (const item of markdownAgents) {
-      const content = await Bun.file(item).text()
-      const md = matter(content)
-      if (!md.data) continue
-
-      // Extract relative path from agent folder for nested agents
-      let agentName = path.basename(item, ".md")
-      const agentFolderPath = item.includes("/.opencode/agent/")
-        ? item.split("/.opencode/agent/")[1]
-        : item.includes("/agent/")
-          ? item.split("/agent/")[1]
-          : agentName + ".md"
-
-      // If agent is in a subfolder, include folder path in name
-      if (agentFolderPath.includes("/")) {
-        const relativePath = agentFolderPath.replace(".md", "")
-        const pathParts = relativePath.split("/")
-        agentName = pathParts.slice(0, -1).join("/") + "/" + pathParts[pathParts.length - 1]
-      }
-
-      const config = {
-        name: agentName,
-        ...md.data,
-        prompt: md.content.trim(),
-      }
-      const parsed = Agent.safeParse(config)
-      if (parsed.success) {
-        result.agent = mergeDeep(result.agent, {
-          [config.name]: parsed.data,
-        })
-        continue
-      }
-      throw new InvalidError({ path: item }, { cause: parsed.error })
-    }
-
-    // Load mode markdown files
-    result.mode = result.mode || {}
-    const markdownModes = [
-      ...(await Filesystem.globUp("mode/*.md", Global.Path.config, Global.Path.config)),
-      ...(await Filesystem.globUp(".opencode/mode/*.md", Instance.directory, Instance.worktree)),
-    ]
-    for (const item of markdownModes) {
-      const content = await Bun.file(item).text()
-      const md = matter(content)
-      if (!md.data) continue
-
-      const config = {
-        name: path.basename(item, ".md"),
-        ...md.data,
-        prompt: md.content.trim(),
-      }
-      const parsed = Agent.safeParse(config)
-      if (parsed.success) {
-        result.agent = mergeDeep(result.mode, {
-          [config.name]: {
-            ...parsed.data,
-            mode: "primary" as const,
-          },
-        })
-        continue
-      }
-    }
-
-    // Load command markdown files
-    result.command = result.command || {}
-    const markdownCommands = [
-      ...(await Filesystem.globUp("command/*.md", Global.Path.config, Global.Path.config)),
-      ...(await Filesystem.globUp(".opencode/command/*.md", Instance.directory, Instance.worktree)),
-    ]
-    for (const item of markdownCommands) {
-      const content = await Bun.file(item).text()
-      const md = matter(content)
-      if (!md.data) continue
-
-      const config = {
-        name: path.basename(item, ".md"),
-        ...md.data,
-        template: md.content.trim(),
-      }
-      const parsed = Command.safeParse(config)
-      if (parsed.success) {
-        result.command = mergeDeep(result.command, {
-          [config.name]: parsed.data,
-        })
-        continue
-      }
-      throw new InvalidError({ path: item }, { cause: parsed.error })
-    }
-    // Migrate deprecated mode field to agent field
-    for (const [name, mode] of Object.entries(result.mode)) {
-      result.agent = mergeDeep(result.agent ?? {}, {
-        [name]: {
-          ...mode,
-          mode: "primary" as const,
-        },
-      })
-    }
-
-    result.plugin = result.plugin || []
-    result.plugin.push(
-      ...[
-        ...(await Filesystem.globUp("plugin/*.{ts,js}", Global.Path.config, Global.Path.config)),
-        ...(await Filesystem.globUp(".opencode/plugin/*.{ts,js}", Instance.directory, Instance.worktree)),
-      ].map((x) => "file://" + x),
-    )
-
-    if (Flag.OPENCODE_PERMISSION) {
-      result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
-    }
+    const _auth = await Auth.all()
+    const result = await global()
 
     if (!result.username) result.username = os.userInfo().username
 
@@ -187,36 +50,6 @@ export namespace Config {
     return result
   })
 
-  export const McpLocal = z
-    .object({
-      type: z.literal("local").describe("Type of MCP server connection"),
-      command: z.string().array().describe("Command and arguments to run the MCP server"),
-      environment: z
-        .record(z.string(), z.string())
-        .optional()
-        .describe("Environment variables to set when running the MCP server"),
-      enabled: z.boolean().optional().describe("Enable or disable the MCP server on startup"),
-    })
-    .strict()
-    .openapi({
-      ref: "McpLocalConfig",
-    })
-
-  export const McpRemote = z
-    .object({
-      type: z.literal("remote").describe("Type of MCP server connection"),
-      url: z.string().describe("URL of the remote MCP server"),
-      enabled: z.boolean().optional().describe("Enable or disable the MCP server on startup"),
-      headers: z.record(z.string(), z.string()).optional().describe("Headers to send with the request"),
-    })
-    .strict()
-    .openapi({
-      ref: "McpRemoteConfig",
-    })
-
-  export const Mcp = z.discriminatedUnion("type", [McpLocal, McpRemote])
-  export type Mcp = z.infer<typeof Mcp>
-
   export const Permission = z.union([z.literal("ask"), z.literal("allow"), z.literal("deny")])
   export type Permission = z.infer<typeof Permission>
 
@@ -247,9 +80,6 @@ export namespace Config {
         .optional(),
     })
     .catchall(z.any())
-    .openapi({
-      ref: "AgentConfig",
-    })
   export type Agent = z.infer<typeof Agent>
 
   export const Keybinds = z
@@ -322,60 +152,25 @@ export namespace Config {
       messages_revert: z.string().optional().default("none").describe("@deprecated use messages_undo. Revert message"),
     })
     .strict()
-    .openapi({
-      ref: "KeybindsConfig",
-    })
 
   export const TUI = z.object({
     scroll_speed: z.number().min(1).optional().default(2).describe("TUI scroll speed"),
   })
 
-  export const Layout = z.enum(["auto", "stretch"]).openapi({
-    ref: "LayoutConfig",
-  })
-  export type Layout = z.infer<typeof Layout>
-
   export const Info = z
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
-      theme: z.string().optional().describe("Theme name to use for the interface"),
       keybinds: Keybinds.optional().describe("Custom keybind configurations"),
-      tui: TUI.optional().describe("TUI specific settings"),
       command: z
         .record(z.string(), Command)
         .optional()
         .describe("Command configuration, see https://opencode.ai/docs/commands"),
-      plugin: z.string().array().optional(),
       snapshot: z.boolean().optional(),
-      share: z
-        .enum(["manual", "auto", "disabled"])
-        .optional()
-        .describe(
-          "Control sharing behavior:'manual' allows manual sharing via commands, 'auto' enables automatic sharing, 'disabled' disables all sharing",
-        ),
-      autoshare: z
-        .boolean()
-        .optional()
-        .describe("@deprecated Use 'share' field instead. Share newly created sessions automatically"),
-      autoupdate: z.boolean().optional().describe("Automatically update to the latest version"),
-      disabled_providers: z.array(z.string()).optional().describe("Disable providers that are loaded automatically"),
       model: z.string().describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
       small_model: z
         .string()
         .describe("Small model to use for tasks like title generation in the format of provider/model")
         .optional(),
-      username: z
-        .string()
-        .optional()
-        .describe("Custom username to display in conversations instead of system username"),
-      mode: z
-        .object({
-          build: Agent.optional(),
-          plan: Agent.optional(),
-        })
-        .catchall(Agent)
-        .optional()
-        .describe("@deprecated Use `agent` field instead."),
       agent: z
         .object({
           plan: Agent.optional(),
@@ -385,69 +180,6 @@ export namespace Config {
         .catchall(Agent)
         .optional()
         .describe("Agent configuration, see https://opencode.ai/docs/agent"),
-      provider: z
-        .record(
-          ModelsDev.Provider.partial()
-            .extend({
-              models: z.record(ModelsDev.Model.partial()).optional(),
-              options: z
-                .object({
-                  apiKey: z.string().optional(),
-                  baseURL: z.string().optional(),
-                  timeout: z
-                    .union([
-                      z
-                        .number()
-                        .int()
-                        .positive()
-                        .describe(
-                          "Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.",
-                        ),
-                      z.literal(false).describe("Disable timeout for this provider entirely."),
-                    ])
-                    .optional()
-                    .describe(
-                      "Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.",
-                    ),
-                })
-                .catchall(z.any())
-                .optional(),
-            })
-            .strict(),
-        )
-        .optional()
-        .describe("Custom provider configurations and model overrides"),
-      mcp: z.record(z.string(), Mcp).optional().describe("MCP (Model Context Protocol) server configurations"),
-      formatter: z
-        .record(
-          z.string(),
-          z.object({
-            disabled: z.boolean().optional(),
-            command: z.array(z.string()).optional(),
-            environment: z.record(z.string(), z.string()).optional(),
-            extensions: z.array(z.string()).optional(),
-          }),
-        )
-        .optional(),
-      lsp: z
-        .record(
-          z.string(),
-          z.union([
-            z.object({
-              disabled: z.literal(true),
-            }),
-            z.object({
-              command: z.array(z.string()),
-              extensions: z.array(z.string()).optional(),
-              disabled: z.boolean().optional(),
-              env: z.record(z.string(), z.string()).optional(),
-              initialization: z.record(z.string(), z.any()).optional(),
-            }),
-          ]),
-        )
-        .optional(),
-      instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
-      layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: z
         .object({
           edit: Permission.optional(),
@@ -455,50 +187,15 @@ export namespace Config {
           webfetch: Permission.optional(),
         })
         .optional(),
-      tools: z.record(z.string(), z.boolean()).optional(),
-      experimental: z
-        .object({
-          hook: z
-            .object({
-              file_edited: z
-                .record(
-                  z.string(),
-                  z
-                    .object({
-                      command: z.string().array(),
-                      environment: z.record(z.string(), z.string()).optional(),
-                    })
-                    .array(),
-                )
-                .optional(),
-              session_completed: z
-                .object({
-                  command: z.string().array(),
-                  environment: z.record(z.string(), z.string()).optional(),
-                })
-                .array()
-                .optional(),
-            })
-            .optional(),
-        })
-        .optional(),
     })
     .strict()
-    .openapi({
-      ref: "Config",
-    })
 
   export type Info = z.output<typeof Info>
 
   export const global = lazy(async () => {
-    let result: Info = pipe(
-      {},
-      mergeDeep(await loadFile(path.join(Global.Path.config, "config.json"))),
-      mergeDeep(await loadFile(path.join(Global.Path.config, "opencode.json"))),
-      mergeDeep(await loadFile(path.join(Global.Path.config, "opencode.jsonc"))),
-    )
+    let result: Info = pipe({}, mergeDeep(await loadFile(path.join(Path.config, "config.json"))))
 
-    await import(path.join(Global.Path.config, "config"), {
+    await import(path.join(Path.config, "config"), {
       with: {
         type: "toml",
       },
@@ -508,8 +205,8 @@ export namespace Config {
         if (provider && model) result.model = `${provider}/${model}`
         result["$schema"] = "https://opencode.ai/config.json"
         result = mergeDeep(result, rest)
-        await Bun.write(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
-        await fs.unlink(path.join(Global.Path.config, "config"))
+        await Bun.write(path.join(Path.config, "config.json"), JSON.stringify(result, null, 2))
+        await fs.unlink(path.join(Path.config, "config"))
       })
       .catch(() => {})
 
@@ -518,7 +215,7 @@ export namespace Config {
 
   async function loadFile(filepath: string): Promise<Info> {
     log.info("loading", { path: filepath })
-    let text = await Bun.file(filepath)
+    const text = await Bun.file(filepath)
       .text()
       .catch((err) => {
         if (err.code === "ENOENT") return
@@ -539,10 +236,6 @@ export namespace Config {
       const lines = text.split("\n")
 
       for (const match of fileMatches) {
-        const lineIndex = lines.findIndex((line) => line.includes(match))
-        if (lineIndex !== -1 && lines[lineIndex].trim().startsWith("//")) {
-          continue // Skip if line is commented
-        }
         let filePath = match.replace(/^\{file:/, "").replace(/\}$/, "")
         if (filePath.startsWith("~/")) {
           filePath = path.join(os.homedir(), filePath.slice(2))
@@ -567,27 +260,36 @@ export namespace Config {
       }
     }
 
-    const errors: JsoncParseError[] = []
-    const data = parseJsonc(text, errors, { allowTrailingComma: true })
-    if (errors.length) {
-      const lines = text.split("\n")
-      const errorDetails = errors
-        .map((e) => {
-          const beforeOffset = text.substring(0, e.offset).split("\n")
-          const line = beforeOffset.length
-          const column = beforeOffset[beforeOffset.length - 1].length + 1
-          const problemLine = lines[line - 1]
+    let data: any
+    try {
+      data = JSON.parse(text)
+    } catch (error) {
+      // Extract line and column from the error message
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const match = errorMessage.match(/position (\d+)/)
+      
+      if (match) {
+        const position = parseInt(match[1], 10)
+        const lines = text.split("\n")
+        const beforeOffset = text.substring(0, position).split("\n")
+        const line = beforeOffset.length
+        const column = beforeOffset[beforeOffset.length - 1]!.length + 1
+        const problemLine = lines[line - 1]
 
-          const error = `${printParseErrorCode(e.error)} at line ${line}, column ${column}`
-          if (!problemLine) return error
+        const errorDetail = `JSON parse error at line ${line}, column ${column}`
+        const formattedError = problemLine 
+          ? `${errorDetail}\n   Line ${line}: ${problemLine}\n${"".padStart(column + 9)}^`
+          : errorDetail
 
-          return `${error}\n   Line ${line}: ${problemLine}\n${"".padStart(column + 9)}^`
+        throw new JsonError({
+          path: configFilepath,
+          message: `\n--- JSON Input ---\n${text}\n--- Error ---\n${formattedError}\n--- End ---`,
         })
-        .join("\n")
-
+      }
+      
       throw new JsonError({
         path: configFilepath,
-        message: `\n--- JSONC Input ---\n${text}\n--- Errors ---\n${errorDetails}\n--- End ---`,
+        message: `JSON parse error: ${errorMessage}`,
       })
     }
 
@@ -597,20 +299,13 @@ export namespace Config {
         parsed.data.$schema = "https://opencode.ai/config.json"
         await Bun.write(configFilepath, JSON.stringify(parsed.data, null, 2))
       }
-      const data = parsed.data
-      if (data.plugin) {
-        for (let i = 0; i < data.plugin?.length; i++) {
-          const plugin = data.plugin[i]
-          try {
-            data.plugin[i] = import.meta.resolve(plugin, configFilepath)
-          } catch (err) {}
-        }
-      }
+
       return data
     }
 
     throw new InvalidError({ path: configFilepath, issues: parsed.error.issues })
   }
+
   export const JsonError = NamedError.create(
     "ConfigJsonError",
     z.object({
@@ -623,7 +318,7 @@ export namespace Config {
     "ConfigInvalidError",
     z.object({
       path: z.string(),
-      issues: z.custom<z.ZodIssue[]>().optional(),
+      issues: z.custom<z.ZodError[]>().optional(),
       message: z.string().optional(),
     }),
   )

@@ -6,7 +6,7 @@ import DESCRIPTION from "./bash.txt"
 import { Permission } from "../permission"
 import { Filesystem } from "../util/filesystem"
 import { lazy } from "../util/lazy"
-import { Log } from "../util/log"
+import { Logger } from "../util/logger"
 import { Wildcard } from "../util/wildcard"
 import { $ } from "bun"
 import { Instance } from "../project/instance"
@@ -16,7 +16,7 @@ const MAX_OUTPUT_LENGTH = 30_000
 const DEFAULT_TIMEOUT = 1 * 60 * 1000
 const MAX_TIMEOUT = 10 * 60 * 1000
 
-const log = Log.create({ service: "bash-tool" })
+const log = Logger.create({ service: "bash-tool" })
 
 const parser = lazy(async () => {
   try {

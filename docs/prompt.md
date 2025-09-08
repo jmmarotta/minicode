@@ -1,0 +1,1 @@
+Convert a file for usage in my project. Errors coming from imports in this project. Change the tools to use modules instead of namespaces instead. I want to access the exports in a const that is the name of the namespace with the exports underneath it.

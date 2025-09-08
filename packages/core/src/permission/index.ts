@@ -2,7 +2,6 @@ import { z } from "zod"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
 import { Identifier } from "../id/id"
-import { Plugin } from "../plugin"
 import { Instance } from "../project/instance"
 
 export namespace Permission {

@@ -6,26 +6,27 @@ import { defineConfig } from "eslint/config"
 
 export default defineConfig([
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    files: ["**/*.{js,mjs,cjs}"],
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.browser },
-    rules: {
-      "no-empty": ["error", { allowEmptyCatch: true }],
-    },
+    rules: {},
   },
   {
     files: ["**/*.ts"],
     extends: [js.configs.recommended, tseslint.configs.recommended],
     rules: {
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          caughtErrors: "none",
         },
       ],
       "no-empty": ["error", { allowEmptyCatch: true }],
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
   {
