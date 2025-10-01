@@ -1,6 +1,5 @@
 import z from "zod"
 import { ReadTool } from "./read"
-import type { Agent } from "../agent"
 
 const ALL = [ReadTool]
 
@@ -28,29 +27,6 @@ export async function tools(providerID: string, _modelID: string) {
       ...t,
       parameters: sanitizeGeminiParameters(t.parameters),
     }))
-  }
-
-  return result
-}
-
-export async function enabled(
-  _providerID: string,
-  _modelID: string,
-  agent: Agent.Info,
-): Promise<Record<string, boolean>> {
-  const result: Record<string, boolean> = {}
-  result["patch"] = false
-
-  if (agent.permission.edit === "deny") {
-    result["edit"] = false
-    result["patch"] = false
-    result["write"] = false
-  }
-  if (agent.permission.bash["*"] === "deny" && Object.keys(agent.permission.bash).length === 1) {
-    result["bash"] = false
-  }
-  if (agent.permission.webfetch === "deny") {
-    result["webfetch"] = false
   }
 
   return result
