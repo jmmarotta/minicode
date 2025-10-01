@@ -1,7 +1,7 @@
 import z from "zod"
-import { ReadTool } from "./read"
+import { Read } from "./read"
 
-const ALL = [ReadTool]
+const ALL = [Read.tool]
 
 export function ids() {
   return ALL.map((t) => t.id)
