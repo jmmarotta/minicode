@@ -1,7 +1,11 @@
 import z from "zod"
 import { Read } from "./read"
+import { Bash } from "./bash"
+import { List } from "./ls"
+import { Edit } from "./edit"
+import { MultiEdit } from "./multiedit"
 
-const ALL = [Read.tool]
+const ALL = [Read.tool, Bash.tool, List.tool, Edit.tool, MultiEdit.tool]
 
 export function ids() {
   return ALL.map((t) => t.id)

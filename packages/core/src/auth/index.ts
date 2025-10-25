@@ -109,7 +109,7 @@ export async function AnthropicAuthPlugin({ client }: { client: any }) {
                 auth.access = json.access_token
               }
               const headers = {
-                ...(init?.headers || {}),
+                ...init?.headers,
                 authorization: `Bearer ${auth.access}`,
                 "anthropic-beta":
                   "oauth-2025-04-20,claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14",

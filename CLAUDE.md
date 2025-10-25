@@ -18,18 +18,24 @@ Minicode is a TypeScript-based CLI tool/agent system using Bun as runtime and pa
 # Install dependencies
 bun install
 
-# Run the application
+# Run the application (interactive CLI)
 bun run packages/core/src/index.ts
+# or from core package
+cd packages/core && bun run src/index.ts
 
 # Lint code (TypeScript, JSON, Markdown)
-bun lint
-# or
-bun lint:all
+bun lint          # lint specific files
+bun lint:all      # lint all files
 
 # Format code with Prettier
-bun fmt
-# or
-bun fmt:all
+bun fmt           # format specific files  
+bun fmt:all       # format all files
+
+# Type checking
+bun tsc --noEmit
+
+# Run tests (when available)
+bun test
 
 # Run with hot reload during development
 bun --hot packages/core/src/index.ts
@@ -39,14 +45,33 @@ bun --hot packages/core/src/index.ts
 
 The project follows a modular architecture with clean separation of concerns:
 
-- `packages/core/src/agent/` - Agent-related functionality
-- `packages/core/src/auth/` - Authentication logic
-- `packages/core/src/cli/` - Command line interface implementation
-- `packages/core/src/provider/` - Service provider integrations
-- `packages/core/src/session/` - Session management
+### Core Modules
+
+- `packages/core/src/agent/` - Agent system with configurable models, permissions, and tools
+- `packages/core/src/auth/` - Authentication management for API providers
+- `packages/core/src/provider/` - AI provider integrations (Anthropic, OpenAI, etc.) with custom loaders
+- `packages/core/src/session/` - Session and system prompt management
 - `packages/core/src/storage/` - Data persistence layer
-- `packages/core/src/tool/` - Tool integrations
-- `packages/core/src/util/` - Shared utilities
+- `packages/core/src/tool/` - Tool registry and implementations (ReadTool, BashTool, etc.)
+- `packages/core/src/config/` - Global and project configuration management
+- `packages/core/src/project/` - Project instance and state management
+
+### Supporting Modules
+
+- `packages/core/src/bus/` - Event bus for inter-module communication
+- `packages/core/src/permission/` - Permission system for tool access control
+- `packages/core/src/file/` - File watching and time tracking utilities
+- `packages/core/src/global/` - Global path and environment utilities
+- `packages/core/src/id/` - ID generation utilities
+- `packages/core/src/util/` - Shared utilities (logger, error handling, lazy loading, etc.)
+
+### Key Architectural Patterns
+
+1. **Namespace Pattern**: Modules use TypeScript namespaces for organization (e.g., `Config`, `Provider`, `Agent`)
+2. **State Management**: Uses `Instance.state()` for lazy-loaded, cached state management
+3. **Tool Registry**: Centralized tool registration with provider-specific adaptations
+4. **Permission System**: Granular permissions for tools (allow/ask/deny)
+5. **Lazy Loading**: Uses `lazy()` utility for deferred initialization
 
 ## Key Dependencies
 
@@ -74,6 +99,7 @@ Default to using Bun instead of Node.js:
 - `WebSocket` is built-in. Don't use `ws`
 - Prefer `Bun.file` over `node:fs`'s readFile/writeFile
 - Bun.$`ls` instead of execa
+- Use Bun.$ for shell commands with template literals
 
 ### Frontend (if needed)
 
@@ -112,10 +138,25 @@ bun --hot ./index.ts
 
 ## Code Standards
 
-- TypeScript with strict mode enabled
-- ESLint configured for TypeScript, JSON, and Markdown
-- Prettier for consistent formatting
+- TypeScript with strict mode enabled (extends @tsconfig/bun)
+- ESLint configured for TypeScript, JSON, and Markdown files
+  - Unused variables: prefix with underscore (_) to ignore warnings
+  - Empty catch blocks are allowed
+  - TypeScript any warnings (not errors)
+- Prettier configuration:
+  - No semicolons
+  - Print width: 120 characters
 - Follow existing patterns in neighboring files
-- Use Zod for runtime validation when handling external data
+- Use Zod for runtime validation and type inference
+- Error handling: Use `NamedError` for custom errors
+- Logging: Use `Logger.create({ service: "name" })`
+
+## Common Development Patterns
+
+- **State Management**: Use `Instance.state()` for module-level state
+- **Configuration**: Access via `Config.get()` which merges global and project configs  
+- **Provider Integration**: Register custom loaders in `CUSTOM_LOADERS`
+- **Tool Implementation**: Extend tool registry in `packages/core/src/tool/registry.ts`
+- **Async Initialization**: Use lazy loading pattern for expensive operations
 
 For more Bun API documentation, see `node_modules/bun-types/docs/**.md`.

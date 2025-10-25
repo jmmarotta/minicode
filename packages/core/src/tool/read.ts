@@ -1,6 +1,7 @@
 import { z } from "zod"
 import * as path from "path"
 import { Tool } from "./tool"
+import DESCRIPTION from "./description/read.txt"
 
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
@@ -83,17 +84,14 @@ async function isBinaryFile(filepath: string, file: Bun.BunFile): Promise<boolea
   return nonPrintableCount / bytes.length > 0.3
 }
 
-const tool = Tool.define("read", async () => {
-  const description = await Bun.file(path.join(import.meta.dir, "description", "read.txt")).text()
-
-  return {
-    description,
+const tool = Tool.define("read", {
+  description: DESCRIPTION,
     parameters: z.object({
       filePath: z.string().describe("The path to the file to read"),
       offset: z.coerce.number().describe("The line number to start reading from (0-based)").optional(),
       limit: z.coerce.number().describe("The number of lines to read (defaults to 2000)").optional(),
     }),
-    async execute(args, ctx) {
+    async execute(args, _ctx) {
       const { filePath, offset = 0, limit = DEFAULT_READ_LIMIT } = args
 
       // Ensure absolute path
@@ -153,7 +151,6 @@ const tool = Tool.define("read", async () => {
         },
       }
     },
-  }
 })
 
 export const Read = {
