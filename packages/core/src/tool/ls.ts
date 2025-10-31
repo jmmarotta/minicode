@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { Tool } from "./tool"
 import * as path from "path"
-import DESCRIPTION from "./ls.txt"
+import DESCRIPTION from "./description/ls.txt"
 import { Instance } from "../project/instance"
 import { Logger } from "../util/logger"
 

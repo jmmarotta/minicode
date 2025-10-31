@@ -2,24 +2,20 @@ import z from "zod"
 import { Filesystem } from "../util/filesystem"
 import path from "path"
 import { $ } from "bun"
-import { Storage } from "../storage/storage"
-import { Log } from "../util/log"
+import { Storage } from "../storage"
+import { Logger } from "../util/logger"
 
 export namespace Project {
-  const log = Log.create({ service: "project" })
-  export const Info = z
-    .object({
-      id: z.string(),
-      worktree: z.string(),
-      vcs: z.literal("git").optional(),
-      time: z.object({
-        created: z.number(),
-        initialized: z.number().optional(),
-      }),
-    })
-    .openapi({
-      ref: "Project",
-    })
+  const log = Logger.create({ service: "project" })
+  export const Info = z.object({
+    id: z.string(),
+    worktree: z.string(),
+    vcs: z.literal("git").optional(),
+    time: z.object({
+      created: z.number(),
+      initialized: z.number().optional(),
+    }),
+  })
   export type Info = z.infer<typeof Info>
 
   const cache = new Map<string, Info>()

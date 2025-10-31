@@ -1,11 +1,14 @@
-import { anthropic as originalAnthropic, createAnthropic } from "@ai-sdk/anthropic"
+import { anthropic as originalAnthropic, createAnthropic as _ } from "@ai-sdk/anthropic"
 import { env } from "bun"
-import { streamText } from "ai"
+import SYSTEM_PROMPT from "./session/prompt/anthropic.txt"
+import { tool, ToolLoopAgent } from "ai"
+import { tools } from "./tool/registry"
+import type { Context } from "./tool/tool"
 
 type AuthType = "api" | "oauth"
 const authType = "api" as AuthType
 
-function anthroopicProviderFromAuthType(authType: AuthType) {
+function anthropicProviderFromAuthType(authType: AuthType) {
   const params: Record<string, unknown> = {}
 
   if (authType === "oauth") {
@@ -21,7 +24,50 @@ function anthroopicProviderFromAuthType(authType: AuthType) {
   }
 }
 
-export const anthropic = anthroopicProviderFromAuthType(authType)
+export const anthropic = anthropicProviderFromAuthType(authType)
+
+// Load tools from registry
+const registeredTools = await tools("anthropic", "claude-sonnet-4-5")
+
+// Create context generator for tool execution
+function createContext(toolCallId: string): Context {
+  const abortController = new AbortController()
+  return {
+    sessionID: "cli-session",
+    messageID: `msg-${Date.now()}`,
+    agent: "minicode-cli",
+    callID: toolCallId,
+    abort: abortController.signal,
+    metadata: (input) => {
+      // For CLI, we could log metadata or ignore it
+      if (input.title) {
+        console.log(`\n[Tool: ${input.title}]`)
+      }
+    },
+  }
+}
+
+// Convert tools to the format expected by AI SDK
+const toolsForAI = Object.fromEntries(
+  registeredTools.map((t) => [
+    t.id,
+    tool({
+      description: t.description,
+      inputSchema: t.parameters,
+      execute: async (args: any) => {
+        const ctx = createContext(t.id)
+        const result = await t.execute(args, ctx)
+        return result.output
+      },
+    }),
+  ]),
+)
+
+const agent = new ToolLoopAgent({
+  model: anthropic("claude-sonnet-4-5"),
+  instructions: SYSTEM_PROMPT,
+  tools: toolsForAI,
+})
 
 const stdin = process.stdin
 const stdout = process.stdout
@@ -38,8 +84,7 @@ for await (const line of stdin) {
   }
 
   if (input) {
-    const result = streamText({
-      model: anthropic("claude-sonnet-4-20250514"),
+    const result = await agent.stream({
       prompt: input,
     })
 

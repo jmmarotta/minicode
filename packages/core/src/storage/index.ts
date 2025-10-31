@@ -2,7 +2,6 @@ import { Logger } from "../util/logger"
 import path from "path"
 import fs from "fs/promises"
 import { Global } from "../global"
-import { lazy } from "../util/lazy"
 import { Lock } from "../util/lock"
 import { $ } from "bun"
 
@@ -106,24 +105,31 @@ export namespace Storage {
     },
   ]
 
-  const state = lazy(async () => {
-    const dir = path.join(Global.Path.data, "storage")
-    const migration = await Bun.file(path.join(dir, "migration"))
-      .json()
-      .then((x) => parseInt(x))
-      .catch(() => 0)
-    for (let index = migration; index < MIGRATIONS.length; index++) {
-      log.info("running migration", { index })
-      const migration = MIGRATIONS[index]
-      await migration(dir).catch((e) => {
-        log.error("failed to run migration", { error: e, index })
-      })
-      await Bun.write(path.join(dir, "migration"), (index + 1).toString())
+  let statePromise: Promise<{ dir: string }> | null = null
+
+  const state = () => {
+    if (!statePromise) {
+      statePromise = (async () => {
+        const dir = path.join(Global.Path.data, "storage")
+        const migration = await Bun.file(path.join(dir, "migration"))
+          .json()
+          .then((x) => parseInt(x))
+          .catch(() => 0)
+        for (let index = migration; index < MIGRATIONS.length; index++) {
+          log.info("running migration", { index })
+          const migration = MIGRATIONS[index]
+          await migration(dir).catch((e) => {
+            log.error("failed to run migration", { error: e, index })
+          })
+          await Bun.write(path.join(dir, "migration"), (index + 1).toString())
+        }
+        return {
+          dir,
+        }
+      })()
     }
-    return {
-      dir,
-    }
-  })
+    return statePromise
+  }
 
   export async function remove(key: string[]) {
     const dir = await state().then((x) => x.dir)
