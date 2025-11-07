@@ -9,7 +9,7 @@ import { File } from "@/file"
 import { FileTime } from "@/file/time"
 import { Filesystem } from "@/util/filesystem"
 import { Instance } from "@/project/instance"
-import { Agent } from "@/agent/agent"
+import { Agent } from "@/agent"
 
 export const WriteTool = Tool.define("write", {
   description: DESCRIPTION,

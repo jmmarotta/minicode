@@ -5,7 +5,7 @@ import { Session } from "@/session"
 import { Bus } from "@/bus"
 import { MessageV2 } from "@/session/message-v2"
 import { Identifier } from "@/id/id"
-import { Agent } from "@/agent/agent"
+import { Agent } from "@/agent"
 
 export const TaskTool = Tool.define("task", async () => {
   const agents = await Agent.list().then((x) => x.filter((a) => a.mode !== "primary"))
