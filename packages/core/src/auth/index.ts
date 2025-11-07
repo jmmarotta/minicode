@@ -177,3 +177,10 @@ export async function AnthropicAuthPlugin({ client }: { client: any }) {
     },
   }
 }
+
+export const Auth = {
+  async all() {
+    // Stub: return empty auth for now
+    return {}
+  },
+}

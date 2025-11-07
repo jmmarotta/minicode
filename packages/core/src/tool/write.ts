@@ -1,15 +1,15 @@
 import { z } from "zod"
 import * as path from "path"
 import { Tool } from "./tool"
-import { LSP } from "../lsp"
-import { Permission } from "../permission"
+import { LSP } from "@/lsp"
+import { Permission } from "@/permission"
 import DESCRIPTION from "./write.txt"
-import { Bus } from "../bus"
-import { File } from "../file"
-import { FileTime } from "../file/time"
-import { Filesystem } from "../util/filesystem"
-import { Instance } from "../project/instance"
-import { Agent } from "../agent/agent"
+import { Bus } from "@/bus"
+import { File } from "@/file"
+import { FileTime } from "@/file/time"
+import { Filesystem } from "@/util/filesystem"
+import { Instance } from "@/project/instance"
+import { Agent } from "@/agent/agent"
 
 export const WriteTool = Tool.define("write", {
   description: DESCRIPTION,

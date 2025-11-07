@@ -2,8 +2,8 @@ import { z } from "zod"
 import { exec } from "child_process"
 import * as _path from "path"
 import { Tool } from "./tool"
-import { Instance } from "../project/instance"
-import { Logger } from "../util/logger"
+import { Instance } from "@/project/instance"
+import { Logger } from "@/util/logger"
 import DESCRIPTION from "./description/bash.txt"
 
 const MAX_OUTPUT_LENGTH = 30_000

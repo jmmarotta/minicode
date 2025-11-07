@@ -2,8 +2,8 @@ import { z } from "zod"
 import { Tool } from "./tool"
 import * as path from "path"
 import DESCRIPTION from "./description/ls.txt"
-import { Instance } from "../project/instance"
-import { Logger } from "../util/logger"
+import { Instance } from "@/project/instance"
+import { Logger } from "@/util/logger"
 
 const _log = Logger.create({ service: "ls-tool" })
 

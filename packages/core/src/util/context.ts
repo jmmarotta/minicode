@@ -15,10 +15,10 @@ export function create<T>(name: string) {
       }
       return value
     },
-    provide<R>(value: T, fn: () => R): R {
+    async provide<R>(value: T, fn: () => R): Promise<Awaited<R>> {
       stores.set(name, value)
       try {
-        return fn()
+        return await fn()
       } finally {
         stores.delete(name)
       }

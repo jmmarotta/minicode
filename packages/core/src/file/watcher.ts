@@ -1,7 +1,7 @@
 import { z } from "zod"
-import { Bus } from "../bus"
+import { Bus } from "@/bus"
 import fs from "fs"
-import { Logger } from "../util/logger"
+import { Logger } from "@/util/logger"
 
 const log = Logger.create({ service: "file.watcher" })
 

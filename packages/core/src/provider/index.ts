@@ -1,13 +1,13 @@
 import z from "zod"
-import { Config } from "../config"
+import { Config } from "@/config"
 import { mergeDeep, sortBy } from "remeda"
 import { NoSuchModelError, type LanguageModel, type Provider as SDK } from "ai"
-import { Logger } from "../util/log"
-import { BunProc } from "../bun"
+import { Logger } from "@/util/log"
+import { BunProc } from "@/bun"
 import { ModelsDev } from "./models"
-import { NamedError } from "../util/error"
-import { Auth } from "../auth"
-import { Instance } from "../project/instance"
+import { NamedError } from "@/util/error"
+import { Auth } from "@/auth"
+import { Instance } from "@/project/instance"
 
 export namespace Provider {
   const log = Logger.create({ service: "provider" })

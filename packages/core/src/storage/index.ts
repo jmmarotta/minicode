@@ -1,8 +1,8 @@
-import { Logger } from "../util/logger"
+import { Logger } from "@/util/logger"
 import path from "path"
 import fs from "fs/promises"
-import { Global } from "../global"
-import { Lock } from "../util/lock"
+import { Global } from "@/global"
+import { Lock } from "@/util/lock"
 import { $ } from "bun"
 
 export namespace Storage {

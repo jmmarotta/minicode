@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs/promises";
-import { Path } from "../global";
+import { Path } from "@/global";
 import z from "zod";
 
 // Types and constants

@@ -1,4 +1,4 @@
-import { create } from "../util/logger"
+import { create } from "@/util/logger"
 
 const log = create({ service: "file.time" })
 

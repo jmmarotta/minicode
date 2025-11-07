@@ -1,9 +1,9 @@
 import z from "zod"
-import { Filesystem } from "../util/filesystem"
+import { Filesystem } from "@/util/filesystem"
 import path from "path"
 import { $ } from "bun"
-import { Storage } from "../storage"
-import { Logger } from "../util/logger"
+import { Storage } from "@/storage"
+import { Logger } from "@/util/logger"
 
 export namespace Project {
   const log = Logger.create({ service: "project" })

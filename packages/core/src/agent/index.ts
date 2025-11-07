@@ -1,10 +1,10 @@
-import { Config } from "../config"
+import { Config } from "@/config"
 import z from "zod"
-import { Provider } from "../provider"
+import { Provider } from "@/provider"
 import { generateObject, type ModelMessage } from "ai"
 import PROMPT_GENERATE from "./generate.txt"
-import { SystemPrompt } from "../session/system"
-import { Instance } from "../project/instance"
+import { SystemPrompt } from "@/session/system"
+import { Instance } from "@/project/instance"
 import { mergeDeep } from "remeda"
 
 export const Info = z.object({
@@ -26,7 +26,7 @@ export const Info = z.object({
     })
     .optional(),
   prompt: z.string().optional(),
-  tools: z.record(z.boolean()),
+  tools: z.record(z.string(), z.boolean()),
   options: z.record(z.string(), z.any()),
 })
 export type Info = z.infer<typeof Info>
@@ -169,7 +169,7 @@ export async function generate(input: { description: string }) {
   return result.object
 }
 
-function mergeAgentPermissions(basePermission: any, overridePermission: any): Agent.Info["permission"] {
+function mergeAgentPermissions(basePermission: any, overridePermission: any): Info["permission"] {
   const merged = mergeDeep(basePermission ?? {}, overridePermission ?? {}) as any
   let mergedBash
   if (merged.bash) {
@@ -189,7 +189,7 @@ function mergeAgentPermissions(basePermission: any, overridePermission: any): Ag
     }
   }
 
-  const result: Agent.Info["permission"] = {
+  const result: Info["permission"] = {
     edit: merged.edit ?? "allow",
     webfetch: merged.webfetch ?? "allow",
     bash: mergedBash ?? { "*": "allow" },

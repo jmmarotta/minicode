@@ -3,8 +3,8 @@ import { Tool } from "./tool"
 import { Edit } from "./edit"
 import DESCRIPTION from "./description/multiedit.txt"
 import path from "path"
-import { Instance } from "../project/instance"
-import { Logger } from "../util/logger"
+import { Instance } from "@/project/instance"
+import { Logger } from "@/util/logger"
 
 const _log = Logger.create({ service: "multiedit-tool" })
 

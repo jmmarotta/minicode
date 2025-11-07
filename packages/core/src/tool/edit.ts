@@ -8,10 +8,10 @@ import * as path from "path"
 import { Tool } from "./tool"
 import { createTwoFilesPatch } from "diff"
 import DESCRIPTION from "./description/edit.txt"
-import { FileTime } from "../file/time"
-import { Filesystem } from "../util/filesystem"
-import { Instance } from "../project/instance"
-import { Logger } from "../util/logger"
+import { FileTime } from "@/file/time"
+import { Filesystem } from "@/util/filesystem"
+import { Instance } from "@/project/instance"
+import { Logger } from "@/util/logger"
 
 const _log = Logger.create({ service: "edit-tool" })
 
