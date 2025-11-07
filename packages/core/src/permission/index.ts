@@ -4,26 +4,34 @@ import { Logger } from "@/util/logger"
 import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
 
+// Plugin system stub for permission hooks
+namespace Plugin {
+  export async function trigger<T, R>(
+    _event: string,
+    _data: T,
+    defaultResult: R,
+  ): Promise<R> {
+    // Stub: plugins not implemented yet, return default
+    return defaultResult
+  }
+}
+
 export namespace Permission {
   const log = Logger.create({ service: "permission" })
 
-  export const Info = z
-    .object({
-      id: z.string(),
-      type: z.string(),
-      pattern: z.string().optional(),
-      sessionID: z.string(),
-      messageID: z.string(),
-      callID: z.string().optional(),
-      title: z.string(),
-      metadata: z.record(z.any()),
-      time: z.object({
-        created: z.number(),
-      }),
-    })
-    .openapi({
-      ref: "Permission",
-    })
+  export const Info = z.object({
+    id: z.string(),
+    type: z.string(),
+    pattern: z.string().optional(),
+    sessionID: z.string(),
+    messageID: z.string(),
+    callID: z.string().optional(),
+    title: z.string(),
+    metadata: z.record(z.string(), z.any()),
+    time: z.object({
+      created: z.number(),
+    }),
+  })
   export type Info = z.infer<typeof Info>
 
   export const Event = {
@@ -99,8 +107,8 @@ export namespace Permission {
 
     switch (
       await Plugin.trigger("permission.ask", info, {
-        status: "ask",
-      }).then((x) => x.status)
+        status: "ask" as const,
+      }).then((x: { status: string }) => x.status)
     ) {
       case "deny":
         throw new RejectedError(info.sessionID, info.id, info.callID, info.metadata)

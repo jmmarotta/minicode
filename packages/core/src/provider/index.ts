@@ -118,14 +118,14 @@ export namespace Provider {
         const existing = parsed.models[modelID]
         const parsedModel: ModelsDev.Model = {
           id: modelID,
-          name: model.name ?? existing?.name ?? modelID,
-          release_date: model.release_date ?? existing?.release_date,
-          attachment: model.attachment ?? existing?.attachment ?? false,
-          reasoning: model.reasoning ?? existing?.reasoning ?? false,
-          temperature: model.temperature ?? existing?.temperature ?? false,
-          tool_call: model.tool_call ?? existing?.tool_call ?? true,
+          name: (model as any).name ?? existing?.name ?? modelID,
+          release_date: (model as any).release_date ?? existing?.release_date,
+          attachment: (model as any).attachment ?? existing?.attachment ?? false,
+          reasoning: (model as any).reasoning ?? existing?.reasoning ?? false,
+          temperature: (model as any).temperature ?? existing?.temperature ?? false,
+          tool_call: (model as any).tool_call ?? existing?.tool_call ?? true,
           cost:
-            !model.cost && !existing?.cost
+            !(model as any).cost && !existing?.cost
               ? {
                   input: 0,
                   output: 0,
@@ -133,16 +133,14 @@ export namespace Provider {
                   cache_write: 0,
                 }
               : {
-                  cache_read: 0,
-                  cache_write: 0,
                   ...existing?.cost,
-                  ...model.cost,
+                  ...(model as any).cost,
                 },
           options: {
             ...existing?.options,
-            ...model.options,
+            ...(model as any).options,
           },
-          limit: model.limit ??
+          limit: (model as any).limit ??
             existing?.limit ?? {
               context: 0,
               output: 0,
@@ -170,8 +168,8 @@ export namespace Provider {
     // load apikeys
     for (const [providerID, provider] of Object.entries(await Auth.all())) {
       if (disabled.has(providerID)) continue
-      if (provider.type === "api") {
-        mergeProvider(providerID, { apiKey: provider.key }, "api")
+      if ((provider as any).type === "api") {
+        mergeProvider(providerID, { apiKey: (provider as any).key }, "api")
       }
     }
 

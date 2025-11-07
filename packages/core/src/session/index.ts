@@ -204,4 +204,20 @@ export const Session = {
       },
     }
   },
+  abort(sessionID: string) {
+    // Stub: abort a session
+  },
+  async prompt(options: {
+    messageID: string
+    sessionID: string
+    model: { modelID: string; providerID: string }
+    [key: string]: any
+  }) {
+    // Stub: send a prompt
+    return {
+      text: "",
+      usage: { inputTokens: 0, outputTokens: 0 },
+      parts: [],
+    }
+  },
 }

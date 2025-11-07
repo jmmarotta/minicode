@@ -1,10 +1,13 @@
 export namespace BunProc {
-  export async function install(packageName: string) {
-    const proc = Bun.spawn(["bun", "install", packageName], {
+  export async function install(packageName: string, version: string): Promise<string> {
+    const proc = Bun.spawn(["bun", "install", `${packageName}@${version}`], {
       stdout: "pipe",
       stderr: "pipe",
     })
     await proc.exited
-    return proc.exitCode === 0
+    if (proc.exitCode !== 0) {
+      throw new Error(`Failed to install ${packageName}@${version}`)
+    }
+    return packageName
   }
 }

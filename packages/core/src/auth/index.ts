@@ -184,3 +184,24 @@ export const Auth = {
     return {}
   },
 }
+
+export type AuthType = "api" | "oauth"
+
+export function createAnthropicProvider(authType: AuthType) {
+  // Stub provider creator - returns a mock LanguageModel
+  return (modelName: string) => {
+    return {
+      specificationVersion: "v3" as const,
+      provider: "anthropic" as const,
+      modelId: modelName,
+      defaultObjectGenerationMode: "json" as const,
+      supportedUrls: {} as Record<string, RegExp[]>,
+      doGenerate: async () => {
+        throw new Error("Not implemented")
+      },
+      doStream: async () => {
+        throw new Error("Not implemented")
+      },
+    }
+  }
+}
