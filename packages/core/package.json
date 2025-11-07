@@ -3,21 +3,26 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
+    "typecheck": "tsgo --noEmit",
     "hello": "bun run src/index.ts"
   },
   "dependencies": {
-    "@openauthjs/openauth": "^0.4.3",
-    "ai": "catalog:",
     "@ai-sdk/anthropic": "catalog:",
+    "@openauthjs/openauth": "^0.4.3",
+    "@types/turndown": "^5.0.6",
+    "@zip.js/zip.js": "^2.8.8",
+    "ai": "catalog:",
     "diff": "^8.0.2",
     "remeda": "catalog:",
     "tree-sitter": "0.25.0",
     "tree-sitter-bash": "0.25.0",
+    "turndown": "^7.2.2",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "@tsconfig/bun": "catalog:"
+    "@tsconfig/bun": "catalog:",
+    "@typescript/native-preview": "catalog:"
   },
   "peerDependencies": {
     "typescript": "^5"
