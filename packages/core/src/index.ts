@@ -1,4 +1,5 @@
-import { createAnthropicProvider, type AuthType } from "./auth"
+// import { createAnthropicProvider, type AuthType } from "./auth"
+import { anthropic } from "@ai-sdk/anthropic"
 import { createSession } from "./session"
 import { Instance } from "./project/instance"
 
@@ -8,13 +9,9 @@ async function main() {
 
   // Provide context for the entire application
   await Instance.provide(directory, async () => {
-    // Configuration
-    const authType: AuthType = "api"
-    const provider = createAnthropicProvider(authType)
-
     // Initialize session (now with context available)
     const session = await createSession({
-      model: provider("claude-sonnet-4-5"),
+      model: anthropic("claude-sonnet-4-5"),
       provider: "anthropic",
       modelName: "claude-sonnet-4-5",
     })

@@ -1,4 +1,4 @@
-import { tool, ToolLoopAgent } from "ai"
+import { tool, ToolLoopAgent, type StepResult } from "ai"
 import type { LanguageModel } from "ai"
 import { tools } from "@/tool/registry"
 import type { Context } from "@/tool/tool"
@@ -6,6 +6,7 @@ import { Ripgrep } from "@/file/ripgrep"
 import { Global } from "@/global"
 import { Filesystem } from "@/util/filesystem"
 import { Instance } from "@/project/instance"
+import { formatter } from "./formatter"
 import path from "path"
 import os from "os"
 
@@ -128,9 +129,9 @@ export function createContext(sessionID: string, toolCallId: string): Context {
     callID: toolCallId,
     abort: abortController.signal,
     metadata: (input) => {
-      // For CLI, we could log metadata or ignore it
+      // Use formatter for clean tool metadata display
       if (input.title) {
-        console.log(`\n[Tool: ${input.title}]`)
+        formatter.formatToolMetadata(input.title, input.metadata || {})
       }
     },
   }
@@ -181,6 +182,9 @@ export async function createSession(config: SessionConfig): Promise<SessionInsta
     model: config.model,
     instructions: systemPrompt,
     tools: toolsForAI,
+    onStepFinish: async (step: StepResult<any>) => {
+      formatter.formatStep(step)
+    },
   })
 
   return {
