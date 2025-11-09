@@ -1,6 +1,5 @@
 import type { StepResult } from "ai"
 
-// Type definitions for better type safety
 interface ToolCall {
   toolName: string
   args?: Record<string, unknown>
@@ -64,9 +63,6 @@ export class CLIFormatter {
     }
   }
 
-  /**
-   * Format tool calls in a user-friendly way
-   */
   private formatToolCalls(toolCalls: ToolCall[]): void {
     console.log("\n")
 
@@ -83,10 +79,6 @@ export class CLIFormatter {
     }
   }
 
-  /**
-   * Format tool results in a user-friendly way
-   * Only shows results for bash, write, edit, multiedit, todowrite, and todoread tools
-   */
   private formatToolResults(toolResults: ToolResult[]): void {
     for (const result of toolResults) {
       const toolName = result.toolName
@@ -164,9 +156,6 @@ export class CLIFormatter {
     }
   }
 
-  /**
-   * Get a user-friendly description of what a tool is doing
-   */
   private getToolDescription(toolName: string, args: Record<string, unknown>): string {
     switch (toolName) {
       case "list": {
@@ -198,8 +187,7 @@ export class CLIFormatter {
 
       case "webfetch": {
         const url = (args.url as string) || "URL"
-        const domain = this.extractDomain(url)
-        return `fetch → ${domain}`
+        return `fetch → ${url}`
       }
 
       case "task": {
@@ -215,21 +203,6 @@ export class CLIFormatter {
 
       default:
         return `${toolName}`
-    }
-  }
-
-  /**
-   * Extract domain from URL safely
-   */
-  private extractDomain(url: string | undefined, fallback = "web"): string {
-    if (!url) return fallback
-    try {
-      const urlObj = new URL(url)
-      return urlObj.hostname
-    } catch {
-      // Fallback to simple parsing if URL constructor fails
-      const parts = url.split("/")
-      return parts[2] || fallback
     }
   }
 
@@ -274,9 +247,6 @@ export class CLIFormatter {
     console.log("")
   }
 
-  /**
-   * Format priority label with fixed width for alignment
-   */
   private formatPriority(priority: string): string {
     switch (priority.toLowerCase()) {
       case "high":
