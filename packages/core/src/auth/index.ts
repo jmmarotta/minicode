@@ -196,12 +196,6 @@ export function createAnthropicProvider(authType: AuthType) {
       modelId: modelName,
       defaultObjectGenerationMode: "json" as const,
       supportedUrls: {} as Record<string, RegExp[]>,
-      doGenerate: async () => {
-        throw new Error("Not implemented")
-      },
-      doStream: async () => {
-        throw new Error("Not implemented")
-      },
     }
   }
 }
