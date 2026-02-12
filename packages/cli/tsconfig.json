@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/bun/tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "paths": {
+      "*": ["./*"],
+      "@minicode/sdk": ["../sdk/src/index.ts"]
+    }
+  }
+}

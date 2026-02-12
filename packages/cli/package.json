@@ -1,0 +1,23 @@
+{
+  "name": "minicode",
+  "bin": {
+    "minicode": "src/index.ts"
+  },
+  "type": "module",
+  "module": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "hello": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@minicode/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
