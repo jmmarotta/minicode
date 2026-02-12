@@ -1,10 +1,28 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "tasks": {
-    "typecheck": {},
+    "fmt": {
+      "cache": false
+    },
+    "fmt:check": {
+      "cache": false
+    },
+    "lint": {
+      "cache": false
+    },
+    "lint:check": {
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": []
     }
   }
 }

@@ -1,5 +1,6 @@
 // import { createAnthropicProvider, type AuthType } from "./auth"
 import { anthropic } from "@ai-sdk/anthropic"
+import type { LanguageModel } from "ai"
 import { createSession } from "./session"
 import { Instance } from "./project/instance"
 
@@ -11,7 +12,7 @@ async function main() {
   await Instance.provide(directory, async () => {
     // Initialize session (now with context available)
     const session = await createSession({
-      model: anthropic("claude-sonnet-4-5"),
+      model: anthropic("claude-sonnet-4-5") as LanguageModel,
       provider: "anthropic",
       modelName: "claude-sonnet-4-5",
     })
