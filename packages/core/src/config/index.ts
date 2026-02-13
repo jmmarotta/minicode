@@ -273,7 +273,7 @@ export namespace Config {
       // Extract line and column from the error message
       const errorMessage = error instanceof Error ? error.message : String(error)
       const match = errorMessage.match(/position (\d+)/)
-      
+
       if (match) {
         const position = parseInt(match[1], 10)
         const lines = text.split("\n")
@@ -283,7 +283,7 @@ export namespace Config {
         const problemLine = lines[line - 1]
 
         const errorDetail = `JSON parse error at line ${line}, column ${column}`
-        const formattedError = problemLine 
+        const formattedError = problemLine
           ? `${errorDetail}\n   Line ${line}: ${problemLine}\n${"".padStart(column + 9)}^`
           : errorDetail
 
@@ -292,7 +292,7 @@ export namespace Config {
           message: `\n--- JSON Input ---\n${text}\n--- Error ---\n${formattedError}\n--- End ---`,
         })
       }
-      
+
       throw new JsonError({
         path: configFilepath,
         message: `JSON parse error: ${errorMessage}`,

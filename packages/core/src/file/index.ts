@@ -13,7 +13,7 @@ export const Event = {
     "file.edited",
     z.object({
       file: z.string(),
-    })
+    }),
   ),
 }
 

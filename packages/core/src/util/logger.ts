@@ -1,32 +1,32 @@
-import path from "path";
-import fs from "fs/promises";
-import { Path } from "@/global";
-import z from "zod";
+import path from "path"
+import fs from "fs/promises"
+import { Path } from "@/global"
+import z from "zod"
 
 // Types and constants
-export const Level = z.enum(["DEBUG", "INFO", "WARN", "ERROR"]);
-export type Level = z.infer<typeof Level>;
+export const Level = z.enum(["DEBUG", "INFO", "WARN", "ERROR"])
+export type Level = z.infer<typeof Level>
 
 export type Logger = {
-  debug(message?: string, extra?: Record<string, unknown>): void;
-  info(message?: string, extra?: Record<string, unknown>): void;
-  error(message?: string, extra?: Record<string, unknown>): void;
-  warn(message?: string, extra?: Record<string, unknown>): void;
-  tag(key: string, value: string): Logger;
-  clone(): Logger;
+  debug(message?: string, extra?: Record<string, unknown>): void
+  info(message?: string, extra?: Record<string, unknown>): void
+  error(message?: string, extra?: Record<string, unknown>): void
+  warn(message?: string, extra?: Record<string, unknown>): void
+  tag(key: string, value: string): Logger
+  clone(): Logger
   time(
     message: string,
     extra?: Record<string, unknown>,
   ): {
-    stop(): void;
-    [Symbol.dispose](): void;
-  };
-};
+    stop(): void
+    [Symbol.dispose](): void
+  }
+}
 
 export interface Options {
-  print: boolean;
-  dev?: boolean;
-  level?: Level;
+  print: boolean
+  dev?: boolean
+  level?: Level
 }
 
 // Internal state
@@ -35,67 +35,63 @@ const levelPriority: Record<Level, number> = {
   INFO: 1,
   WARN: 2,
   ERROR: 3,
-};
+}
 
-let level: Level = "INFO";
-const loggers = new Map<string, Logger>();
-let logpath = "";
-let last = Date.now();
+let level: Level = "INFO"
+const loggers = new Map<string, Logger>()
+let logpath = ""
+let last = Date.now()
 
 // Private functions
 function shouldLog(input: Level): boolean {
-  return levelPriority[input] >= levelPriority[level];
+  return levelPriority[input] >= levelPriority[level]
 }
 
 async function cleanup(dir: string) {
-  const glob = new Bun.Glob("????-??-??T??????.log");
+  const glob = new Bun.Glob("????-??-??T??????.log")
   const files = await Array.fromAsync(
     glob.scan({
       cwd: dir,
       absolute: true,
     }),
-  );
-  if (files.length <= 5) return;
+  )
+  if (files.length <= 5) return
 
-  const filesToDelete = files.slice(0, -10);
-  await Promise.all(
-    filesToDelete.map((file) => fs.unlink(file).catch(() => {})),
-  );
+  const filesToDelete = files.slice(0, -10)
+  await Promise.all(filesToDelete.map((file) => fs.unlink(file).catch(() => {})))
 }
 
 // Public API
 export function file() {
-  return logpath;
+  return logpath
 }
 
 export async function init(options: Options) {
-  if (options.level) level = options.level;
-  cleanup(Path.log);
-  if (options.print) return;
+  if (options.level) level = options.level
+  cleanup(Path.log)
+  if (options.print) return
   logpath = path.join(
     Path.log,
-    options.dev
-      ? "dev.log"
-      : new Date().toISOString().split(".")[0]!.replace(/:/g, "") + ".log",
-  );
-  const logfile = Bun.file(logpath);
-  await fs.truncate(logpath).catch(() => {});
-  const writer = logfile.writer();
+    options.dev ? "dev.log" : new Date().toISOString().split(".")[0]!.replace(/:/g, "") + ".log",
+  )
+  const logfile = Bun.file(logpath)
+  await fs.truncate(logpath).catch(() => {})
+  const writer = logfile.writer()
   process.stderr.write = (msg) => {
-    writer.write(msg);
-    writer.flush();
-    return true;
-  };
+    writer.write(msg)
+    writer.flush()
+    return true
+  }
 }
 
 export function create(tags?: Record<string, string>) {
-  tags = tags || {};
+  tags = tags || {}
 
-  const service = tags["service"];
+  const service = tags["service"]
   if (service && typeof service === "string") {
-    const cached = loggers.get(service);
+    const cached = loggers.get(service)
     if (cached) {
-      return cached;
+      return cached
     }
   }
 
@@ -106,77 +102,73 @@ export function create(tags?: Record<string, string>) {
     })
       .filter(([_, value]) => value !== undefined && value !== null)
       .map(([key, value]) => {
-        const prefix = `${key}=`;
-        if (value instanceof Error) return prefix + value.message;
-        if (typeof value === "object") return prefix + JSON.stringify(value);
-        return prefix + value;
+        const prefix = `${key}=`
+        if (value instanceof Error) return prefix + value.message
+        if (typeof value === "object") return prefix + JSON.stringify(value)
+        return prefix + value
       })
-      .join(" ");
-    const next = new Date();
-    const diff = next.getTime() - last;
-    last = next.getTime();
-    return (
-      [next.toISOString().split(".")[0], "+" + diff + "ms", prefix, message]
-        .filter(Boolean)
-        .join(" ") + "\n"
-    );
+      .join(" ")
+    const next = new Date()
+    const diff = next.getTime() - last
+    last = next.getTime()
+    return [next.toISOString().split(".")[0], "+" + diff + "ms", prefix, message].filter(Boolean).join(" ") + "\n"
   }
 
   const result: Logger = {
     debug(message?: string, extra?: Record<string, unknown>) {
       if (shouldLog("DEBUG")) {
-        process.stderr.write("DEBUG " + build(message, extra));
+        process.stderr.write("DEBUG " + build(message, extra))
       }
     },
     info(message?: string, extra?: Record<string, unknown>) {
       if (shouldLog("INFO")) {
-        process.stderr.write("INFO  " + build(message, extra));
+        process.stderr.write("INFO  " + build(message, extra))
       }
     },
     error(message?: string, extra?: Record<string, unknown>) {
       if (shouldLog("ERROR")) {
-        process.stderr.write("ERROR " + build(message, extra));
+        process.stderr.write("ERROR " + build(message, extra))
       }
     },
     warn(message?: string, extra?: Record<string, unknown>) {
       if (shouldLog("WARN")) {
-        process.stderr.write("WARN  " + build(message, extra));
+        process.stderr.write("WARN  " + build(message, extra))
       }
     },
     tag(key: string, value: string) {
-      if (tags) tags[key] = value;
-      return result;
+      if (tags) tags[key] = value
+      return result
     },
     clone() {
-      return create({ ...tags });
+      return create({ ...tags })
     },
     time(message: string, extra?: Record<string, unknown>) {
-      const now = Date.now();
-      result.info(message, { status: "started", ...extra });
+      const now = Date.now()
+      result.info(message, { status: "started", ...extra })
       function stop() {
         result.info(message, {
           status: "completed",
           duration: Date.now() - now,
           ...extra,
-        });
+        })
       }
       return {
         stop,
         [Symbol.dispose]() {
-          stop();
+          stop()
         },
-      };
+      }
     },
-  };
-
-  if (service && typeof service === "string") {
-    loggers.set(service, result);
   }
 
-  return result;
+  if (service && typeof service === "string") {
+    loggers.set(service, result)
+  }
+
+  return result
 }
 
-export const Default = create({ service: "default" });
+export const Default = create({ service: "default" })
 
 export const Logger = {
   create,
@@ -184,4 +176,4 @@ export const Logger = {
   file,
   Level,
   Default,
-};
+}

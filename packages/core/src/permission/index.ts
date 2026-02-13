@@ -6,11 +6,7 @@ import { Instance } from "@/project/instance"
 
 // Plugin system stub for permission hooks
 namespace Plugin {
-  export async function trigger<T, R>(
-    _event: string,
-    _data: T,
-    defaultResult: R,
-  ): Promise<R> {
+  export async function trigger<T, R>(_event: string, _data: T, defaultResult: R): Promise<R> {
     // Stub: plugins not implemented yet, return default
     return defaultResult
   }

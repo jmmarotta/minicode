@@ -15,7 +15,7 @@ export namespace MessageV2 {
       "message.v2.part.updated",
       z.object({
         part: z.any(),
-      })
+      }),
     ),
   }
 }

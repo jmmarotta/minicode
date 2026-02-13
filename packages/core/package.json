@@ -1,7 +1,7 @@
 {
   "name": "@minicode/core",
-  "module": "src/index.ts",
   "type": "module",
+  "module": "src/index.ts",
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "hello": "bun run src/index.ts"
@@ -20,8 +20,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
     "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
     "@typescript/native-preview": "catalog:"
   },
   "peerDependencies": {
