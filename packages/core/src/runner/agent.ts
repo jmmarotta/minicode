@@ -4,7 +4,7 @@ import type { Agent, CreateAgentOptions, Turn, TurnRequest } from "./types"
 
 function buildMessages(request: TurnRequest, transcript: Array<ModelMessage>): Array<ModelMessage> {
   if ("messages" in request && request.messages) {
-    return [...transcript, ...request.messages]
+    return [...transcript, ...(request.messages as Array<ModelMessage>)]
   }
 
   const prompt = request.prompt.trim()

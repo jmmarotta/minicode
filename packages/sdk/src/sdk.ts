@@ -28,7 +28,7 @@ function cloneState(state: SessionState): SessionState {
 
 function requestMessagesForSession(request: Parameters<Agent["runTurn"]>[0]): Array<ModelMessage> {
   if ("messages" in request && request.messages) {
-    return request.messages
+    return request.messages as Array<ModelMessage>
   }
 
   const prompt = request.prompt.trim()

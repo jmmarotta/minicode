@@ -40,6 +40,7 @@
       "name": "@minicode/core",
       "dependencies": {
         "ai": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@tsconfig/bun": "catalog:",

@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-305f-7000-a799-0048491a3fc4
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5a1-7000-b771-ab987f1de799
 ---
@@ -34,3 +34,20 @@ projectId: 019c4f3c-e5a1-7000-b771-ab987f1de799
 
 - Typecheck imports from package consumers.
 - Validate sample serialized events against schemas.
+
+## Completed
+
+- Added canonical Zod schemas for core runner contracts:
+  - `TurnRequestSchema`
+  - `TurnResponseSchema`
+  - `TurnEventSchema`
+  - supporting schemas (`TurnMessageSchema`, `TurnUsageSchema`, `SerializedErrorSchema`)
+- Kept event naming aligned with conventions (`text_delta`, `tool_call`, `tool_result`, `tool_error`, `step_finish`, `finish`, `abort`, `error`).
+- Exported new schemas and related types through the core public surface (`packages/core/src/runner/index.ts` and `packages/core/src/index.ts`).
+- Added schema-focused tests to validate request/response shapes and every emitted event variant.
+
+## Verified
+
+- `bun run lint:check`
+- `bun test`
+- `bun run typecheck`
