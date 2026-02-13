@@ -457,7 +457,7 @@ Acceptance:
 
 ### Step 2: Tooling baseline
 
-- Replace Prettier + ESLint JSON lint with Oxfmt + Oxlint.
+- Adopt Oxfmt + Oxlint as the unified formatting and linting toolchain.
 - Add Lefthook.
 - Add tsgo scripts.
 - Turbo tasks wired.

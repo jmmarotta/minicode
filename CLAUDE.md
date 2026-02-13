@@ -29,7 +29,7 @@ cd packages/core && bun run src/index.ts
 bun lint          # lint specific files
 bun lint:all      # lint all files
 
-# Format code with Prettier
+# Format code with Oxfmt
 bun fmt           # format specific files
 bun fmt:all       # format all files
 
@@ -144,11 +144,11 @@ bun --hot ./index.ts
 ## Code Standards
 
 - TypeScript with strict mode enabled (extends @tsconfig/bun)
-- ESLint configured for TypeScript, JSON, and Markdown files
+- Oxlint configured for TypeScript, JSON, and Markdown files
   - Unused variables: prefix with underscore (\_) to ignore warnings
   - Empty catch blocks are allowed
   - TypeScript any warnings (not errors)
-- Prettier configuration:
+- Oxfmt configuration:
   - No semicolons
   - Print width: 120 characters
 - Follow existing patterns in neighboring files

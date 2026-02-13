@@ -26,7 +26,7 @@ Captured from the baseline state before rewrite changes.
 - Command: `bun run lint:check`
 - Expected behavior:
   - runs Oxlint with existing warning set
-  - exits non-zero in baseline due to the JSON-eslint glob pattern mismatch
+  - exits non-zero in baseline due to a legacy JSON lint glob pattern mismatch
 
 - Command: `bun run typecheck`
 - Expected behavior:
