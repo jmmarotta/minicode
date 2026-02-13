@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-30aa-7000-b063-8e836dbadfba
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5a1-7000-b771-ab987f1de799
 ---
@@ -34,3 +34,21 @@ projectId: 019c4f3c-e5a1-7000-b771-ab987f1de799
 
 - Test text delta, tool call/result, finish, abort, and error scenarios.
 - Confirm aggregated `responseMessages` match expected transcript append data.
+
+## Completed
+
+- Updated stream consumer behavior in `packages/core/src/runner/stream.ts` to handle interruption paths explicitly:
+  - normalize abort-like exceptions into `abort` events
+  - preserve partial `text` when interrupted
+  - aggregate fallback response fields (`finishReason`, `totalUsage`, `responseMessages`) on abort
+- Kept mapping logic centralized in `packages/core/src/runner/events.ts` and stream aggregation in `packages/core/src/runner/stream.ts`.
+- Expanded stream tests in `packages/core/src/runner/stream.test.ts` with coverage for:
+  - abort part emission and partial text preservation
+  - abort exception normalization
+  - single-consumption of `fullStream`
+
+## Verified
+
+- `bun test packages/core/src/runner`
+- `bun run lint:check`
+- `bun run typecheck`
