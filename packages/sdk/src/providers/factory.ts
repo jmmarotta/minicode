@@ -32,9 +32,34 @@ function requireApiKey(provider: ProviderId, value?: string): string {
   }
 
   const envVar =
-    provider === "openai" ? "OPENAI_API_KEY" : provider === "anthropic" ? "ANTHROPIC_API_KEY" : "GOOGLE_API_KEY"
+    provider === "openai"
+      ? "OPENAI_API_KEY"
+      : provider === "anthropic"
+        ? "ANTHROPIC_API_KEY"
+        : "GOOGLE_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY"
 
   throw new Error(`Missing API key for provider '${provider}'. Set config.apiKeys.${provider} or ${envVar}.`)
+}
+
+function requireOpenAICompatibleBaseUrl(value?: string): string {
+  const baseURL = value?.trim()
+  if (baseURL) {
+    return baseURL
+  }
+
+  throw new Error(
+    "Missing base URL for provider 'openai-compatible'. Set config.openaiCompatible.baseURL or runtime override openaiCompatible.baseURL.",
+  )
+}
+
+function requireOpenAICompatibleApiKey(value?: string): string {
+  if (value) {
+    return value
+  }
+
+  throw new Error(
+    "Missing API key for provider 'openai-compatible'. Set config.apiKeys['openai-compatible'] or OPENAI_COMPATIBLE_API_KEY.",
+  )
 }
 
 export function resolveRuntime(config: ResolvedSdkConfig, override?: RuntimeOverride): ResolvedRuntime {
@@ -92,10 +117,15 @@ export function createLanguageModel(
     }
 
     case "openai-compatible": {
+      const baseURL = requireOpenAICompatibleBaseUrl(runtime.openaiCompatible.baseURL)
+      const apiKey = requireOpenAICompatibleApiKey(
+        runtime.openaiCompatible.apiKey ?? config.apiKeys["openai-compatible"],
+      )
+
       const provider = createOpenAICompatible({
         name: runtime.openaiCompatible.name,
-        baseURL: runtime.openaiCompatible.baseURL,
-        apiKey: runtime.openaiCompatible.apiKey ?? config.apiKeys["openai-compatible"],
+        baseURL,
+        apiKey,
       })
 
       return {

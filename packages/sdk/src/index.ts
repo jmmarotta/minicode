@@ -1,13 +1,5 @@
 export { createMinicode } from "./sdk"
-export {
-  PluginReferenceSchema,
-  PluginsConfigSchema,
-  ProviderIdSchema,
-  ResolvedSdkConfigSchema,
-  SdkConfigSchema,
-} from "./config/schema"
-export { SessionStateSchema } from "./session/schema"
-export { ToolOutputSchema } from "./tools"
+export { PluginsConfigSchema, ProviderIdSchema, ResolvedSdkConfigSchema, SdkConfigSchema } from "./config/schema"
 
 export type { PluginReference, PluginsConfig, ProviderId, ResolvedSdkConfig, SdkConfig } from "./config/schema"
 
@@ -23,5 +15,13 @@ export type {
   SessionSummary,
 } from "./types"
 
-export type { Agent, SerializedError, Turn, TurnEvent, TurnRequest, TurnResponse } from "@minicode/core"
-export type { ToolOutput } from "./tools"
+export type {
+  SerializedError,
+  ToolOutput,
+  Turn,
+  TurnEvent,
+  TurnMessage,
+  TurnRequest,
+  TurnResponse,
+} from "@minicode/core"
+export type { Session as CoreSession, SessionState as CoreSessionState } from "@minicode/core"

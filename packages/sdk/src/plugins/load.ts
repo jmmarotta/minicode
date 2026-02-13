@@ -1,6 +1,8 @@
 import type { PluginsConfig } from "../config/schema"
+import { MinicodePluginSchema, PluginContributionSchema } from "./schema"
 import { normalizePluginReference } from "./normalize"
 import type { LoadedPlugin, MinicodePlugin, PluginContribution, PluginFactory, PluginSetupContext } from "./types"
+import { ZodError } from "zod"
 
 type Logger = {
   info: (message: string, details?: unknown) => void
@@ -20,52 +22,32 @@ function createError(reference: string, stage: string, message: string): Error {
   return new Error(`Plugin load failed [${stage}] ${reference}: ${message}`)
 }
 
-function assertPluginShape(reference: string, plugin: unknown): asserts plugin is MinicodePlugin {
-  if (!plugin || typeof plugin !== "object") {
-    throw createError(reference, "validate", "factory result must be an object")
-  }
-
-  const candidate = plugin as Record<string, unknown>
-
-  if (typeof candidate.id !== "string" || !candidate.id.trim()) {
-    throw createError(reference, "validate", "plugin.id must be a non-empty string")
-  }
-
-  if (candidate.apiVersion !== 1) {
-    throw createError(reference, "validate", "plugin.apiVersion must be exactly 1")
-  }
-
-  if (candidate.setup && typeof candidate.setup !== "function") {
-    throw createError(reference, "validate", "plugin.setup must be a function")
-  }
+function formatZodIssues(error: ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const issuePath = issue.path.length > 0 ? issue.path.join(".") : "<root>"
+      return `${issuePath}: ${issue.message}`
+    })
+    .join("; ")
 }
 
-function assertContributionShape(reference: string, contribution: unknown): asserts contribution is PluginContribution {
-  if (!contribution || typeof contribution !== "object") {
-    throw createError(reference, "validate", "setup() must return an object")
+function parsePluginShape(reference: string, plugin: unknown): MinicodePlugin {
+  const parsed = MinicodePluginSchema.safeParse(plugin)
+  if (!parsed.success) {
+    throw createError(reference, "validate", `invalid plugin contract (${formatZodIssues(parsed.error)})`)
   }
 
-  const sdk = (contribution as { sdk?: unknown }).sdk
-  if (!sdk) {
-    return
+  return parsed.data as MinicodePlugin
+}
+
+function parseContributionShape(reference: string, contribution: unknown): PluginContribution {
+  const normalizedContribution = contribution ?? {}
+  const parsed = PluginContributionSchema.safeParse(normalizedContribution)
+  if (!parsed.success) {
+    throw createError(reference, "validate", `invalid contribution contract (${formatZodIssues(parsed.error)})`)
   }
 
-  if (typeof sdk !== "object") {
-    throw createError(reference, "validate", "contribution.sdk must be an object")
-  }
-
-  const tools = (sdk as { tools?: unknown }).tools
-  if (tools && typeof tools !== "object") {
-    throw createError(reference, "validate", "contribution.sdk.tools must be an object")
-  }
-
-  const instructionFragments = (sdk as { instructionFragments?: unknown }).instructionFragments
-  if (
-    instructionFragments &&
-    (!Array.isArray(instructionFragments) || instructionFragments.some((item) => typeof item !== "string"))
-  ) {
-    throw createError(reference, "validate", "contribution.sdk.instructionFragments must be a string array")
-  }
+  return parsed.data as PluginContribution
 }
 
 async function importPluginFactory(reference: string): Promise<PluginFactory> {
@@ -119,12 +101,12 @@ export async function loadPlugins(options: LoadPluginsOptions): Promise<LoadedPl
       )
     }
 
-    assertPluginShape(normalizedReference, pluginResult)
+    const plugin = parsePluginShape(normalizedReference, pluginResult)
 
-    if (seenPluginIds.has(pluginResult.id)) {
-      throw createError(normalizedReference, "compose", `duplicate plugin id '${pluginResult.id}'`)
+    if (seenPluginIds.has(plugin.id)) {
+      throw createError(normalizedReference, "compose", `duplicate plugin id '${plugin.id}'`)
     }
-    seenPluginIds.add(pluginResult.id)
+    seenPluginIds.add(plugin.id)
 
     const context: PluginSetupContext = {
       reference: normalizedReference,
@@ -135,9 +117,10 @@ export async function loadPlugins(options: LoadPluginsOptions): Promise<LoadedPl
     }
 
     let contribution: PluginContribution = {}
-    if (pluginResult.setup) {
+    if (plugin.setup) {
+      let setupResult: unknown
       try {
-        contribution = (await pluginResult.setup(context)) || {}
+        setupResult = await plugin.setup(context)
       } catch (error) {
         throw createError(
           normalizedReference,
@@ -145,14 +128,14 @@ export async function loadPlugins(options: LoadPluginsOptions): Promise<LoadedPl
           error instanceof Error ? error.message : "setup execution failed",
         )
       }
-    }
 
-    assertContributionShape(normalizedReference, contribution)
+      contribution = parseContributionShape(normalizedReference, setupResult)
+    }
 
     loaded.push({
       reference,
       normalizedReference,
-      plugin: pluginResult,
+      plugin,
       contribution,
     })
   }

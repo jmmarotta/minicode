@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-31a6-7000-a881-4a2816863791
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 ---
@@ -34,3 +34,21 @@ projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 
 - Test valid plugin load paths for package and file URL references.
 - Test conflict and invalid-contract failures with clear diagnostics.
+
+## Completed
+
+- Added plugin contract schemas in `packages/sdk/src/plugins/schema.ts` for plugin objects and SDK contributions.
+- Updated plugin loader validation in `packages/sdk/src/plugins/load.ts` to use schema-backed validation with stage-specific, path-aware diagnostics.
+- Preserved deterministic plugin processing order via configured map insertion order in `loadPlugins(...)` and `composeSdkContributions(...)`.
+- Added focused plugin pipeline tests:
+  - `packages/sdk/src/plugins/normalize.test.ts`
+  - `packages/sdk/src/plugins/load.test.ts`
+  - `packages/sdk/src/plugins/compose.test.ts`
+- Verified duplicate/conflict handling for normalized references, plugin ids, and tool name composition conflicts.
+
+## Verified
+
+- `bun test packages/sdk/src/plugins`
+- `bun test`
+- `bun run lint:check`
+- `bun run typecheck`

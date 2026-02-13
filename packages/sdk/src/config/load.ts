@@ -1,5 +1,6 @@
 import os from "node:os"
 import path from "node:path"
+import { ZodError } from "zod"
 import { ResolvedSdkConfigSchema, type ResolvedSdkConfig, type SdkConfig } from "./schema"
 
 type ConfigObject = Record<string, unknown>
@@ -156,7 +157,22 @@ export async function loadSdkConfig(options: LoadSdkConfigOptions): Promise<{
     { plugins: globalConfigRaw.plugins },
   )
 
-  const resolved = ResolvedSdkConfigSchema.parse(mergedWithoutPlugins)
+  let resolved: ResolvedSdkConfig
+  try {
+    resolved = ResolvedSdkConfigSchema.parse(mergedWithoutPlugins)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const details = error.issues
+        .map((issue) => {
+          const issuePath = issue.path.length > 0 ? issue.path.join(".") : "<root>"
+          return `${issuePath}: ${issue.message}`
+        })
+        .join("; ")
+      throw new Error(`Invalid SDK config: ${details}`)
+    }
+
+    throw error
+  }
 
   return {
     config: resolved,

@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-31cb-7000-a725-b9dfcaee1418
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 ---
@@ -34,3 +34,25 @@ projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 
 - Smoke test factory resolution for each provider with minimal valid config.
 - Confirm invalid provider config paths fail early with clear messages.
+
+## Completed
+
+- Implemented and tightened provider factory validation in `packages/sdk/src/providers/factory.ts` for:
+  - OpenAI
+  - Anthropic
+  - Google
+  - OpenAI-compatible
+- Added actionable error handling for missing credentials and missing OpenAI-compatible `baseURL`.
+- Preserved provider-specific runtime construction internally behind `createLanguageModel(...)` and `resolveRuntime(...)`.
+- Added focused provider factory tests in `packages/sdk/src/providers/factory.test.ts` covering:
+  - all supported provider families
+  - missing credential failures
+  - missing OpenAI-compatible base URL
+  - provider override model resolution behavior
+
+## Verified
+
+- `bun test packages/sdk/src/providers`
+- `bun test`
+- `bun run lint:check`
+- `bun run typecheck`
