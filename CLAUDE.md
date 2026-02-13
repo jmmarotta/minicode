@@ -3,9 +3,11 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---
+
 description: Minicode - AI agent CLI tool built with Bun and TypeScript
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
+globs: "_.ts, _.tsx, _.html, _.css, _.js, _.jsx, package.json"
 alwaysApply: false
+
 ---
 
 ## Project Overview
@@ -28,7 +30,7 @@ bun lint          # lint specific files
 bun lint:all      # lint all files
 
 # Format code with Prettier
-bun fmt           # format specific files  
+bun fmt           # format specific files
 bun fmt:all       # format all files
 
 # Type checking
@@ -115,23 +117,26 @@ Bun.serve({
     "/": index,
     "/api/users/:id": {
       GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
+        return new Response(JSON.stringify({ id: req.params.id }))
       },
     },
   },
   websocket: {
     open: (ws) => ws.send("Hello, world!"),
     message: (ws, message) => ws.send(message),
-    close: (ws) => { /* handle close */ }
+    close: (ws) => {
+      /* handle close */
+    },
   },
   development: {
     hmr: true,
     console: true,
-  }
+  },
 })
 ```
 
 For development with hot reload:
+
 ```bash
 bun --hot ./index.ts
 ```
@@ -140,7 +145,7 @@ bun --hot ./index.ts
 
 - TypeScript with strict mode enabled (extends @tsconfig/bun)
 - ESLint configured for TypeScript, JSON, and Markdown files
-  - Unused variables: prefix with underscore (_) to ignore warnings
+  - Unused variables: prefix with underscore (\_) to ignore warnings
   - Empty catch blocks are allowed
   - TypeScript any warnings (not errors)
 - Prettier configuration:
@@ -154,7 +159,7 @@ bun --hot ./index.ts
 ## Common Development Patterns
 
 - **State Management**: Use `Instance.state()` for module-level state
-- **Configuration**: Access via `Config.get()` which merges global and project configs  
+- **Configuration**: Access via `Config.get()` which merges global and project configs
 - **Provider Integration**: Register custom loaders in `CUSTOM_LOADERS`
 - **Tool Implementation**: Extend tool registry in `packages/core/src/tool/registry.ts`
 - **Async Initialization**: Use lazy loading pattern for expensive operations

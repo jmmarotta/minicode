@@ -5,6 +5,7 @@ This document outlines the process for converting tools to the simplified module
 ## Overview
 
 We are refactoring tools to follow a consistent, simplified pattern that:
+
 - Uses direct module exports instead of namespaces
 - Removes unnecessary complexity (permissions, lazy loading, TreeSitter)
 - Adds logging capabilities for debugging
@@ -15,6 +16,7 @@ We are refactoring tools to follow a consistent, simplified pattern that:
 ### 1. Update Imports
 
 **Remove:**
+
 - `Permission` imports
 - `Agent` imports
 - `Wildcard` imports
@@ -23,10 +25,12 @@ We are refactoring tools to follow a consistent, simplified pattern that:
 - Any unused imports
 
 **Add:**
+
 - `import { Logger } from "../util/logger"`
 - Direct description import: `import DESCRIPTION from "./description/<tool-name>.txt"`
 
 **Example:**
+
 ```typescript
 // Before
 import { lazy } from "../util/lazy"
@@ -83,6 +87,7 @@ if (permission === "deny") {
 ### 5. Remove TreeSitter/Parser Logic
 
 If the tool has TreeSitter AST parsing (like bash.ts did), remove:
+
 - Parser cache (`parserCache`, `getParser()` functions)
 - Path validation loops
 - Related imports (`Bun.$`, `Filesystem`, etc.)
@@ -153,6 +158,7 @@ export const ToolName = {
 ### When to Use Async Tool.define
 
 Only use `async () => ({...})` wrapper if you need to:
+
 - Load resources asynchronously at initialization
 - Perform expensive setup that should be deferred
 
@@ -181,6 +187,7 @@ If using direct imports (`import DESCRIPTION from ...`), use the sync pattern.
 ## Example: Complete Before/After
 
 ### Before (bash.ts - simplified)
+
 ```typescript
 import { lazy } from "../util/lazy"
 import { Permission } from "../permission/permission"
@@ -208,6 +215,7 @@ export const BashTool = lazy(() => tool)
 ```
 
 ### After (bash.ts - simplified)
+
 ```typescript
 import { Logger } from "../util/logger"
 import DESCRIPTION from "./description/bash.txt"
@@ -236,6 +244,7 @@ export const Bash = {
 ## Future Tool Development
 
 When creating new tools, follow the "After" pattern from the start:
+
 1. Use direct imports for descriptions
 2. Include Logger from the beginning
 3. Use sync Tool.define with object pattern

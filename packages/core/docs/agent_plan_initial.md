@@ -1,6 +1,7 @@
 Agents
 Model / Provider
 Tools
+
 - engine.ts
 - registry.ts
 - bash.ts
@@ -35,17 +36,17 @@ Tools
   - todoread.txt
 
 Sessions
+
 - abstracts away the master loop
 - has an async dual buffer queue to handle pause/interjections
-- 
-Messages
-Auth
-Modes
-Permission
-Actions executed on agent within agent methods
+- Messages
+  Auth
+  Modes
+  Permission
+  Actions executed on agent within agent methods
 - compact
 - init memory
-Memory (markdown file)
+  Memory (markdown file)
 
 Session abstraction
 has many messages
@@ -75,7 +76,6 @@ add tool calls for showing the user files
 idempotent operations are allowed multiple times
 
 Memory Stored in markdown files loaded with method on agent
-
 
 Look through the following notes and come up with a high level plan for architecting the following library:
 
