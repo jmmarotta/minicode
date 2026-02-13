@@ -28,6 +28,7 @@ export function createAgent<Tools extends ToolSet>(options: CreateAgentOptions<T
     instructions: options.instructions,
     stopWhen: options.stopWhen,
     onStepFinish: options.onStepFinish,
+    experimental_context: options.context,
   })
 
   return {

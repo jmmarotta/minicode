@@ -12,32 +12,32 @@ const AbortSignalSchema = z.custom<AbortSignal>((value) => value instanceof Abor
   message: "Expected AbortSignal",
 })
 
-export const TurnMessageSchema = z
-  .object({
-    role: z.string().trim().min(1),
-    content: z.unknown(),
-  })
-  .passthrough()
+const RequiredUnknownSchema = z.custom<unknown>((value) => value !== undefined, {
+  message: "Required",
+})
+
+export const TurnMessageSchema = z.looseObject({
+  role: z.string().trim().min(1),
+  content: RequiredUnknownSchema,
+})
 
 export type TurnMessage = z.output<typeof TurnMessageSchema>
 
-export const TurnUsageSchema = z
-  .object({
-    inputTokens: z.number().int().nonnegative().optional(),
-    outputTokens: z.number().int().nonnegative().optional(),
-    totalTokens: z.number().int().nonnegative().optional(),
-    reasoningTokens: z.number().int().nonnegative().optional(),
-    cachedInputTokens: z.number().int().nonnegative().optional(),
-  })
-  .passthrough()
+export const TurnUsageSchema = z.looseObject({
+  inputTokens: z.number().int().nonnegative().optional(),
+  outputTokens: z.number().int().nonnegative().optional(),
+  totalTokens: z.number().int().nonnegative().optional(),
+  reasoningTokens: z.number().int().nonnegative().optional(),
+  cachedInputTokens: z.number().int().nonnegative().optional(),
+})
 
 export const TurnRequestSchema = z.union([
-  z.object({
+  z.strictObject({
     prompt: z.string().trim().min(1),
     messages: z.never().optional(),
     abortSignal: AbortSignalSchema.optional(),
   }),
-  z.object({
+  z.strictObject({
     prompt: z.never().optional(),
     messages: z.array(TurnMessageSchema),
     abortSignal: AbortSignalSchema.optional(),
@@ -58,7 +58,7 @@ export type TurnRequest =
 
 export type TurnResponseMessage = TurnMessage
 
-export const TurnResponseSchema = z.object({
+export const TurnResponseSchema = z.strictObject({
   text: z.string(),
   responseMessages: z.array(TurnMessageSchema),
   finishReason: z.string().trim().min(1),
@@ -72,66 +72,66 @@ export type TurnResponse = {
   totalUsage: LanguageModelUsage
 }
 
-export const SerializedErrorSchema = z.object({
+export const SerializedErrorSchema = z.strictObject({
   name: z.string().trim().min(1),
   message: z.string(),
 })
 
 export type SerializedError = z.output<typeof SerializedErrorSchema>
 
-const TextDeltaTurnEventSchema = z.object({
+const TextDeltaTurnEventSchema = z.strictObject({
   type: z.literal("text_delta"),
   text: z.string(),
 })
 
-const ReasoningDeltaTurnEventSchema = z.object({
+const ReasoningDeltaTurnEventSchema = z.strictObject({
   type: z.literal("reasoning_delta"),
   text: z.string(),
 })
 
-const ToolCallTurnEventSchema = z.object({
+const ToolCallTurnEventSchema = z.strictObject({
   type: z.literal("tool_call"),
   toolCallId: z.string().trim().min(1),
   toolName: z.string().trim().min(1),
-  input: z.unknown(),
+  input: RequiredUnknownSchema,
   providerExecuted: z.boolean().optional(),
 })
 
-const ToolResultTurnEventSchema = z.object({
+const ToolResultTurnEventSchema = z.strictObject({
   type: z.literal("tool_result"),
   toolCallId: z.string().trim().min(1),
   toolName: z.string().trim().min(1),
-  input: z.unknown(),
-  output: z.unknown(),
+  input: RequiredUnknownSchema,
+  output: RequiredUnknownSchema,
   providerExecuted: z.boolean().optional(),
 })
 
-const ToolErrorTurnEventSchema = z.object({
+const ToolErrorTurnEventSchema = z.strictObject({
   type: z.literal("tool_error"),
   toolCallId: z.string().trim().min(1),
   toolName: z.string().trim().min(1),
-  input: z.unknown(),
+  input: RequiredUnknownSchema,
   error: SerializedErrorSchema,
   providerExecuted: z.boolean().optional(),
 })
 
-const StepFinishTurnEventSchema = z.object({
+const StepFinishTurnEventSchema = z.strictObject({
   type: z.literal("step_finish"),
   finishReason: z.string().trim().min(1),
   usage: TurnUsageSchema,
 })
 
-const FinishTurnEventSchema = z.object({
+const FinishTurnEventSchema = z.strictObject({
   type: z.literal("finish"),
   finishReason: z.string().trim().min(1),
   totalUsage: TurnUsageSchema,
 })
 
-const AbortTurnEventSchema = z.object({
+const AbortTurnEventSchema = z.strictObject({
   type: z.literal("abort"),
 })
 
-const ErrorTurnEventSchema = z.object({
+const ErrorTurnEventSchema = z.strictObject({
   type: z.literal("error"),
   error: SerializedErrorSchema,
 })
@@ -166,4 +166,5 @@ export type CreateAgentOptions<Tools extends ToolSet> = {
   instructions?: string
   stopWhen?: ToolLoopAgentSettings<never, Tools>["stopWhen"]
   onStepFinish?: ToolLoopAgentOnStepFinishCallback<Tools>
+  context?: unknown
 }
