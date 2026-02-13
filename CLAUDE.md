@@ -12,7 +12,11 @@ alwaysApply: false
 
 ## Project Overview
 
-Minicode is a TypeScript-based CLI tool/agent system using Bun as runtime and package manager. This is a monorepo using Bun workspaces with the main package at `packages/core/`.
+Minicode is a TypeScript-based Bun monorepo with three packages:
+
+- `packages/core` - runner primitives around AI SDK `ToolLoopAgent`
+- `packages/sdk` - composition layer for providers, plugins, sessions, and default tools
+- `packages/cli` - interactive terminal app entrypoint
 
 ## Development Commands
 
@@ -21,26 +25,24 @@ Minicode is a TypeScript-based CLI tool/agent system using Bun as runtime and pa
 bun install
 
 # Run the application (interactive CLI)
-bun run packages/core/src/index.ts
-# or from core package
-cd packages/core && bun run src/index.ts
+bun run packages/cli/src/index.ts
+
+# Run with hot reload
+bun --hot packages/cli/src/index.ts
 
 # Lint code (TypeScript, JSON, Markdown)
-bun lint          # lint specific files
-bun lint:all      # lint all files
+bun run lint
+bun run lint:check
 
 # Format code with Oxfmt
-bun fmt           # format specific files
-bun fmt:all       # format all files
+bun run fmt
+bun run fmt:check
 
 # Type checking
-bun tsc --noEmit
+bun run typecheck
 
-# Run tests (when available)
+# Run tests
 bun test
-
-# Run with hot reload during development
-bun --hot packages/core/src/index.ts
 ```
 
 ## Architecture
@@ -49,35 +51,36 @@ The project follows a modular architecture with clean separation of concerns:
 
 ### Core Modules
 
-- `packages/core/src/agent/` - Agent system with configurable models, permissions, and tools
-- `packages/core/src/auth/` - Authentication management for API providers
-- `packages/core/src/provider/` - AI provider integrations (Anthropic, OpenAI, etc.) with custom loaders
-- `packages/core/src/session/` - Session and system prompt management
-- `packages/core/src/storage/` - Data persistence layer
-- `packages/core/src/tool/` - Tool registry and implementations (ReadTool, BashTool, etc.)
-- `packages/core/src/config/` - Global and project configuration management
-- `packages/core/src/project/` - Project instance and state management
+- `packages/core/src/runner/agent.ts` - `createAgent` wrapper over `ToolLoopAgent`
+- `packages/core/src/runner/stream.ts` - stream consumption and `Turn` response aggregation
+- `packages/core/src/runner/events.ts` - AI SDK stream-part to `TurnEvent` mapping
+- `packages/core/src/runner/queue.ts` - async queue utility used for turn events
+- `packages/core/src/runner/types.ts` - public runner request/response/event contracts
 
-### Supporting Modules
+### SDK Modules
 
-- `packages/core/src/bus/` - Event bus for inter-module communication
-- `packages/core/src/permission/` - Permission system for tool access control
-- `packages/core/src/file/` - File watching and time tracking utilities
-- `packages/core/src/global/` - Global path and environment utilities
-- `packages/core/src/id/` - ID generation utilities
-- `packages/core/src/util/` - Shared utilities (logger, error handling, lazy loading, etc.)
+- `packages/sdk/src/config/` - config schema + load/merge logic
+- `packages/sdk/src/providers/` - provider runtime resolution + language model factory
+- `packages/sdk/src/plugins/` - plugin normalization, loading, and composition
+- `packages/sdk/src/session/` - file-backed session repository and schema
+- `packages/sdk/src/tools/` - built-in toolset (`read`, `write`, `edit`, `bash`)
+- `packages/sdk/src/sdk.ts` - `createMinicode` composition root
+
+### CLI Modules
+
+- `packages/cli/src/cli/` - args parsing/schema/startup bootstrap
+- `packages/cli/src/app/` - app coordinator, queue, and command routing
+- `packages/cli/src/ui/` - footer, palette, event renderer, stdout bridge
 
 ### Key Architectural Patterns
 
-1. **Namespace Pattern**: Modules use TypeScript namespaces for organization (e.g., `Config`, `Provider`, `Agent`)
-2. **State Management**: Uses `Instance.state()` for lazy-loaded, cached state management
-3. **Tool Registry**: Centralized tool registration with provider-specific adaptations
-4. **Permission System**: Granular permissions for tools (allow/ask/deny)
-5. **Lazy Loading**: Uses `lazy()` utility for deferred initialization
+1. **Deep modules**: keep the runner interface small (`createAgent`, `Turn`, `TurnEvent`) and hide stream complexity.
+2. **Composition at SDK layer**: providers, plugins, sessions, and tools are wired in `createMinicode`.
+3. **Scrollback-first CLI UX**: footer handles input while conversation/tool output flows through stdout.
 
 ## Key Dependencies
 
-- **ai** (v5.0.23) - AI/ML functionality
+- **ai** (v6.0.0-beta.99) - AI/ML functionality
 - **zod** (v4.1.1) - Schema validation and type safety
 - **TypeScript** (v5.9.2) - Strict configuration extends @tsconfig/bun
 
@@ -153,15 +156,12 @@ bun --hot ./index.ts
   - Print width: 120 characters
 - Follow existing patterns in neighboring files
 - Use Zod for runtime validation and type inference
-- Error handling: Use `NamedError` for custom errors
-- Logging: Use `Logger.create({ service: "name" })`
 
 ## Common Development Patterns
 
-- **State Management**: Use `Instance.state()` for module-level state
-- **Configuration**: Access via `Config.get()` which merges global and project configs
-- **Provider Integration**: Register custom loaders in `CUSTOM_LOADERS`
-- **Tool Implementation**: Extend tool registry in `packages/core/src/tool/registry.ts`
-- **Async Initialization**: Use lazy loading pattern for expensive operations
+- **Runner integration**: depend on `createAgent` + `TurnEvent` from `packages/core/src/runner`
+- **SDK composition**: wire providers/plugins/tools through `packages/sdk/src/sdk.ts`
+- **CLI flow**: route prompt/slash/palette interactions through `packages/cli/src/app/commands.ts`
+- **Schema boundaries**: use Zod schemas at config/session/plugin/tool boundaries
 
 For more Bun API documentation, see `node_modules/bun-types/docs/**.md`.

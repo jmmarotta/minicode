@@ -4,12 +4,7 @@
   "compilerOptions": {
     "module": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": [],
-    "noUncheckedIndexedAccess": false,
-    "customConditions": ["browser"],
-    "paths": {
-      "@/*": ["./src/*"],
-      "@tui/*": ["./src/cli/cmd/tui/*"]
-    }
+    "types": ["bun"],
+    "noUncheckedIndexedAccess": false
   }
 }

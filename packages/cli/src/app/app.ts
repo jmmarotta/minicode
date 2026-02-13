@@ -176,13 +176,12 @@ export async function runCliApp(options: RunCliAppOptions): Promise<void> {
       if (exitRequested) {
         queue.clearPending()
         renderer.destroy()
-        return
-      }
-
-      const nextPrompt = queue.settleActive()
-      if (nextPrompt) {
-        stdoutBridge.writeln(`[dequeued] pending=${queue.pendingCount()}`)
-        void runTurnLoop(nextPrompt)
+      } else {
+        const nextPrompt = queue.settleActive()
+        if (nextPrompt) {
+          stdoutBridge.writeln(`[dequeued] pending=${queue.pendingCount()}`)
+          void runTurnLoop(nextPrompt)
+        }
       }
     }
   }
