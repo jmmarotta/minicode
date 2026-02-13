@@ -1,11 +1,11 @@
 pre-commit:
   commands:
     fmt:
-      run: mise exec -- bun run fmt
+      run: bun run fmt
     lint:
-      run: mise exec -- bun run lint:check
+      run: bun run lint:check
 
 pre-push:
   commands:
     typecheck:
-      run: mise exec -- bun run typecheck
+      run: bun run typecheck

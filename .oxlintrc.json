@@ -1,15 +1,21 @@
 {
   "$schema": "https://oxc.rs/schemas/oxlintrc.json",
   "rules": {
-    "typescript/no-unused-vars": ["warn", {
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "destructuredArrayIgnorePattern": "^_",
-      "caughtErrors": "none"
-    }],
-    "no-empty": ["error", {
-      "allowEmptyCatch": true
-    }],
+    "typescript/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "caughtErrors": "none"
+      }
+    ],
+    "no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
     "typescript/no-explicit-any": "warn"
   }
 }
