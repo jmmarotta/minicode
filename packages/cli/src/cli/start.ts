@@ -24,6 +24,13 @@ type PackageManifest = {
   version?: string
 }
 
+type StartCliDependencies = {
+  createMinicode: typeof createMinicode
+  runCliApp: typeof runCliApp
+  writeStdout: (value: string) => void
+  readCliVersion: () => Promise<string>
+}
+
 function toOpenSessionOptions(input: {
   session?: string
   newSession: boolean
@@ -53,7 +60,19 @@ async function readCliVersion(): Promise<string> {
   return manifest.version ?? "0.0.0"
 }
 
-export async function startCli(argv: string[]): Promise<void> {
+const defaultDependencies: StartCliDependencies = {
+  createMinicode,
+  runCliApp,
+  writeStdout(value: string) {
+    process.stdout.write(value)
+  },
+  readCliVersion,
+}
+
+export async function startCli(
+  argv: string[],
+  dependencies: StartCliDependencies = defaultDependencies,
+): Promise<void> {
   const raw = parseRawCliArgs(argv)
 
   let args: ReturnType<typeof parseCliArgs>
@@ -69,17 +88,17 @@ export async function startCli(argv: string[]): Promise<void> {
   }
 
   if (args.help) {
-    process.stdout.write(`${HELP_TEXT}\n`)
+    dependencies.writeStdout(`${HELP_TEXT}\n`)
     return
   }
 
   if (args.version) {
-    process.stdout.write(`${await readCliVersion()}\n`)
+    dependencies.writeStdout(`${await dependencies.readCliVersion()}\n`)
     return
   }
 
   const cwd = path.resolve(args.cwd ?? process.cwd())
-  const sdk = await createMinicode({ cwd })
+  const sdk = await dependencies.createMinicode({ cwd })
 
   const session = await sdk.openSession(
     toOpenSessionOptions({
@@ -91,7 +110,7 @@ export async function startCli(argv: string[]): Promise<void> {
   )
 
   try {
-    await runCliApp({
+    await dependencies.runCliApp({
       sdk,
       session,
       footerHeight: args.footerHeight,

@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-32a4-7000-9f02-14de83e3b666
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 ---
@@ -34,3 +34,14 @@ projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 
 - Run the CLI entry command and confirm expected startup behavior.
 - Confirm package typecheck passes with strict settings.
+
+## Completed
+
+- Scaffolded `packages/cli` with package metadata, `bin` mapping, scripts, and TypeScript config.
+- Added CLI entrypoint wiring in `packages/cli/src/index.ts` with top-level error handling.
+- Kept entrypoint minimal by delegating startup behavior to dedicated CLI modules.
+
+## Verified
+
+- `bun run packages/cli/src/index.ts --help`
+- `bun run --cwd packages/cli typecheck`
