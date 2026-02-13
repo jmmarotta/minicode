@@ -1,17 +1,20 @@
 import { z } from "zod"
-import { failure, success } from "@minicode/core"
-import { defineTool } from "./output"
+import { defineTool, failure, success } from "@minicode/core"
+import type { ArtifactStore } from "../session/artifact-store"
 import { truncateByBytes } from "./shared"
 
-const BashInputSchema = z.object({
+const BashInputSchema = z.strictObject({
   command: z.string().min(1),
   timeoutMs: z.number().int().positive().optional(),
 })
+
+type BashInput = z.output<typeof BashInputSchema>
 
 type BashToolOptions = {
   cwd: string
   defaultTimeoutMs: number
   maxOutputBytes: number
+  artifactStore?: ArtifactStore
 }
 
 function formatCommandOutput(stdout: string, stderr: string): string {
@@ -33,22 +36,29 @@ function formatCommandOutput(stdout: string, stderr: string): string {
 }
 
 export function createBashTool(options: BashToolOptions) {
-  return defineTool({
+  return defineTool<BashInput>({
     description: "Execute a shell command in the session working directory",
     inputSchema: BashInputSchema,
-    execute: async (input, callOptions) => {
+    execute: async (input: BashInput, callOptions) => {
       const timeoutMs = input.timeoutMs ?? options.defaultTimeoutMs
       const abortController = new AbortController()
+      let cancelled = false
 
       const sourceAbort = callOptions.abortSignal
       if (sourceAbort) {
-        sourceAbort.addEventListener(
-          "abort",
-          () => {
-            abortController.abort(sourceAbort.reason)
-          },
-          { once: true },
-        )
+        if (sourceAbort.aborted) {
+          cancelled = true
+          abortController.abort(sourceAbort.reason)
+        } else {
+          sourceAbort.addEventListener(
+            "abort",
+            () => {
+              cancelled = true
+              abortController.abort(sourceAbort.reason)
+            },
+            { once: true },
+          )
+        }
       }
 
       let timedOut = false
@@ -57,23 +67,34 @@ export function createBashTool(options: BashToolOptions) {
         abortController.abort(new Error("command timed out"))
       }, timeoutMs)
 
-      const processRef = Bun.spawn(["bash", "-lc", input.command], {
-        cwd: options.cwd,
-        stdin: "ignore",
-        stdout: "pipe",
-        stderr: "pipe",
-        signal: abortController.signal,
-      })
-
       try {
-        const [exitCode, stdout, stderr] = await Promise.all([
-          processRef.exited,
-          new Response(processRef.stdout).text(),
-          new Response(processRef.stderr).text(),
+        const processRef = Bun.spawn(["bash", "-lc", input.command], {
+          cwd: options.cwd,
+          stdin: "ignore",
+          stdout: "pipe",
+          stderr: "pipe",
+          signal: abortController.signal,
+        })
+
+        const [exitOutcome, stdout, stderr] = await Promise.all([
+          processRef.exited
+            .then((exitCode) => ({
+              exitCode,
+            }))
+            .catch((error) => ({
+              exitCode: null,
+              error: error instanceof Error ? error.message : "unknown error",
+            })),
+          new Response(processRef.stdout).text().catch(() => ""),
+          new Response(processRef.stderr).text().catch(() => ""),
         ])
 
         const formattedOutput = formatCommandOutput(stdout, stderr)
-        const truncated = truncateByBytes(formattedOutput, options.maxOutputBytes)
+        const truncated = await truncateByBytes(formattedOutput, options.maxOutputBytes, {
+          artifactStore: options.artifactStore,
+          callOptions,
+          artifactLabel: "bash-output",
+        })
 
         if (timedOut) {
           return failure(
@@ -84,13 +105,51 @@ export function createBashTool(options: BashToolOptions) {
             },
             {
               timeoutMs,
+              exitCode: exitOutcome.exitCode,
               truncated: truncated.truncated,
+              artifact: truncated.artifact,
+              artifactError: truncated.artifactError,
             },
           )
         }
 
-        const ok = exitCode === 0
-        const outputMessage = ok ? `Command succeeded (exit ${exitCode})` : `Command failed (exit ${exitCode})`
+        if (cancelled) {
+          return failure(
+            "Command cancelled",
+            {
+              command: input.command,
+              output: truncated.text,
+            },
+            {
+              exitCode: exitOutcome.exitCode,
+              truncated: truncated.truncated,
+              artifact: truncated.artifact,
+              artifactError: truncated.artifactError,
+            },
+          )
+        }
+
+        if ("error" in exitOutcome) {
+          return failure(
+            "Command execution failed",
+            {
+              command: input.command,
+              output: truncated.text,
+              error: exitOutcome.error,
+            },
+            {
+              exitCode: exitOutcome.exitCode,
+              truncated: truncated.truncated,
+              artifact: truncated.artifact,
+              artifactError: truncated.artifactError,
+            },
+          )
+        }
+
+        const ok = exitOutcome.exitCode === 0
+        const outputMessage = ok
+          ? `Command succeeded (exit ${exitOutcome.exitCode})`
+          : `Command failed (exit ${exitOutcome.exitCode})`
 
         return (ok ? success : failure)(
           outputMessage,
@@ -99,21 +158,23 @@ export function createBashTool(options: BashToolOptions) {
             output: truncated.text,
           },
           {
-            exitCode,
+            exitCode: exitOutcome.exitCode,
             truncated: truncated.truncated,
+            artifact: truncated.artifact,
+            artifactError: truncated.artifactError,
           },
         )
       } catch (error) {
-        if (timedOut) {
-          return failure(`Command timed out after ${timeoutMs}ms`, {
+        return failure(
+          "Command execution failed",
+          {
             command: input.command,
-          })
-        }
-
-        return failure("Command execution failed", {
-          command: input.command,
-          error: error instanceof Error ? error.message : "unknown error",
-        })
+            error: error instanceof Error ? error.message : "unknown error",
+          },
+          {
+            timeoutMs,
+          },
+        )
       } finally {
         clearTimeout(timeout)
       }

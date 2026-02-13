@@ -1,23 +1,24 @@
 import { z } from "zod"
-import { failure, success } from "@minicode/core"
-import { defineTool } from "./output"
+import { defineTool, failure, success } from "@minicode/core"
 import { resolveFilePath } from "./shared"
 
-const EditInputSchema = z.object({
+const EditInputSchema = z.strictObject({
   filePath: z.string().min(1),
   oldText: z.string().min(1),
   newText: z.string(),
 })
+
+type EditInput = z.output<typeof EditInputSchema>
 
 type EditToolOptions = {
   cwd: string
 }
 
 export function createEditTool(options: EditToolOptions) {
-  return defineTool({
+  return defineTool<EditInput>({
     description: "Replace one exact string match in a text file",
     inputSchema: EditInputSchema,
-    execute: async (input, _callOptions) => {
+    execute: async (input: EditInput, _callOptions) => {
       const filePath = resolveFilePath(options.cwd, input.filePath)
       const file = Bun.file(filePath)
 

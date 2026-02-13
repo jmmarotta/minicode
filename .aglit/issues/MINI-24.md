@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-325b-7000-907f-53f9006d656b
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 ---
@@ -34,3 +34,18 @@ projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 
 - Add integration smoke test for create/open/send/resume flows.
 - Verify model switch and provider-new-session behavior matches documented rules.
+
+## Completed
+
+- Implemented `createMinicode` as the SDK composition root in `packages/sdk/src/sdk.ts`, wiring config loading, plugin loading/composition, provider runtime resolution, built-in tools, and persistence.
+- Implemented full `openSession` flows for new sessions and existing session resume, including `createIfMissing` behavior.
+- Enforced runtime override semantics for existing sessions: provider change is rejected, model override is allowed for same-provider sessions.
+- Implemented `listSessions` and `deleteSession` on the public `Minicode` interface.
+- Wired persistence via session snapshot hooks, including usage total accumulation and artifact reference persistence.
+- Surfaced loaded plugin metadata and runtime catalog through `getLoadedPlugins()` and `getRuntimeCatalog()`.
+
+## Verified
+
+- `bun test packages/sdk/src/sdk.test.ts`
+- `bun test packages/sdk/src`
+- `bun run typecheck`

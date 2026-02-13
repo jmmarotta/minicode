@@ -1,37 +1,20 @@
+import { SessionStateSchema as CoreSessionStateSchema, TurnMessageSchema, TurnUsageSchema } from "@minicode/core"
 import { z } from "zod"
 import { ProviderIdSchema } from "../config/schema"
+import { ArtifactReferenceSchema } from "./artifact-store"
 
-export const SessionMessageSchema = z
-  .object({
-    role: z.string().trim().min(1),
-  })
-  .passthrough()
+export const SessionMessageSchema = TurnMessageSchema
+export const SessionUsageTotalsSchema = TurnUsageSchema
 
-export const SessionUsageTotalsSchema = z
-  .object({
-    inputTokens: z.number().int().nonnegative().optional(),
-    outputTokens: z.number().int().nonnegative().optional(),
-    totalTokens: z.number().int().nonnegative().optional(),
-    reasoningTokens: z.number().int().nonnegative().optional(),
-    cachedInputTokens: z.number().int().nonnegative().optional(),
-  })
-  .passthrough()
-
-export const SessionStateSchema = z
-  .object({
-    version: z.literal(1),
-    id: z.string().trim().min(1),
-    cwd: z.string().trim().min(1),
-    createdAt: z.number().int().nonnegative(),
-    updatedAt: z.number().int().nonnegative(),
-    provider: ProviderIdSchema,
-    model: z.string().trim().min(1),
-    messages: z.array(SessionMessageSchema).default([]),
-    metadata: z.record(z.string(), z.unknown()).optional(),
-    usageTotals: SessionUsageTotalsSchema.optional(),
-    artifacts: z.array(z.unknown()).optional(),
-  })
-  .passthrough()
+export const SessionStateSchema = CoreSessionStateSchema.extend({
+  version: z.literal(1),
+  cwd: z.string().trim().min(1),
+  provider: ProviderIdSchema,
+  model: z.string().trim().min(1),
+  messages: z.array(SessionMessageSchema).default([]),
+  usageTotals: SessionUsageTotalsSchema.optional(),
+  artifacts: z.array(ArtifactReferenceSchema).optional(),
+})
 
 export type SessionState = z.output<typeof SessionStateSchema>
 

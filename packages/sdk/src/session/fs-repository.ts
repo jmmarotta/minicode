@@ -31,6 +31,12 @@ function formatValidationError(error: unknown): string {
   return "Unknown validation error"
 }
 
+function isNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "ENOENT"
+  )
+}
+
 async function readSessionFile(filePath: string, id: string): Promise<SessionState> {
   const file = Bun.file(filePath)
   if (!(await file.exists())) {
@@ -100,11 +106,17 @@ export class FsSessionRepository implements SessionRepository {
   }
 
   async list(): Promise<SessionSummary[]> {
-    if (!(await Bun.file(this.#sessionsDir).exists())) {
-      return []
+    let entries
+    try {
+      entries = await readdir(this.#sessionsDir, { withFileTypes: true })
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return []
+      }
+
+      throw error
     }
 
-    const entries = await readdir(this.#sessionsDir, { withFileTypes: true })
     const summaries: SessionSummary[] = []
 
     for (const entry of entries) {

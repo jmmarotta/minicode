@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-3237-7000-8d20-320b3e6de14a
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 ---
@@ -34,3 +34,17 @@ projectId: 019c4f3c-e5c3-7000-9348-2bb81e82a963
 
 - Run tool-focused tests and smoke calls through a local turn.
 - Validate model-facing output uses `outputMessage` and not raw details blobs.
+
+## Completed
+
+- Switched SDK built-in tools to use `defineTool` directly from `@minicode/core` and removed the SDK-local wrapper module.
+- Tightened built-in tool input schemas to strict object parsing for deterministic input handling.
+- Kept deterministic `edit` one-match replacement semantics and expanded built-in tool coverage for success/failure cases.
+- Hardened `bash` output reporting so timeout/cancel/failure paths consistently include structured metadata and truncated output handling.
+- Added focused built-in tool contract tests, including verification that model-facing output is sourced from `outputMessage`.
+
+## Verified
+
+- `bun test packages/sdk/src/tools`
+- `bun test packages/sdk/src/sdk.test.ts`
+- `bun run typecheck`

@@ -1,7 +1,7 @@
-import { tool, type Tool, type ToolCallOptions } from "ai"
+import { tool, type FlexibleSchema, type Tool, type ToolCallOptions } from "ai"
 import { z } from "zod"
 
-export const ToolOutputSchema = z.object({
+export const ToolOutputSchema = z.strictObject({
   ok: z.boolean(),
   outputMessage: z.string(),
   details: z.unknown().optional(),
@@ -58,7 +58,7 @@ export async function executeWithToolOutput<Input>(
 
 export function defineTool<Input>(options: {
   description: string
-  inputSchema: z.ZodType<Input>
+  inputSchema: FlexibleSchema<Input>
   execute: (input: Input, callOptions: ToolCallOptions) => Promise<ToolOutput>
 }): Tool<Input, ToolOutput> {
   return tool({

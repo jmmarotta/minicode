@@ -1,10 +1,11 @@
 import path from "node:path"
-import { createAgent, type Agent, type Turn } from "@minicode/core"
+import { createAgent, createSession, type Agent, type Turn } from "@minicode/core"
 import type { LanguageModelUsage, ModelMessage } from "ai"
 import { loadSdkConfig } from "./config/load"
 import { createLanguageModel, getRuntimeCatalog, resolveRuntime } from "./providers/factory"
 import { composeSdkContributions } from "./plugins/compose"
 import { loadPlugins } from "./plugins/load"
+import { ArtifactReferenceSchema, FsArtifactStore } from "./session/artifact-store"
 import { FsSessionRepository } from "./session/fs-repository"
 import { SessionStateSchema, type SessionState } from "./session/schema"
 import { createBuiltinTools } from "./tools"
@@ -24,24 +25,6 @@ function normalizeSessionId(value?: string): string | undefined {
 
 function cloneState(state: SessionState): SessionState {
   return SessionStateSchema.parse(structuredClone(state))
-}
-
-function requestMessagesForSession(request: Parameters<Agent["runTurn"]>[0]): Array<ModelMessage> {
-  if ("messages" in request && request.messages) {
-    return request.messages as Array<ModelMessage>
-  }
-
-  const prompt = request.prompt.trim()
-  if (!prompt) {
-    throw new Error("Turn request prompt must not be empty")
-  }
-
-  return [
-    {
-      role: "user",
-      content: prompt,
-    },
-  ]
 }
 
 function mergeUsageTotals(
@@ -64,6 +47,68 @@ function mergeUsageTotals(
   return Object.keys(merged).length > 0 ? merged : undefined
 }
 
+function extractArtifactReferences(responseMessages: Array<unknown>): NonNullable<SessionState["artifacts"]> {
+  const artifacts: NonNullable<SessionState["artifacts"]> = []
+
+  for (const message of responseMessages) {
+    if (!message || typeof message !== "object" || !("content" in message)) {
+      continue
+    }
+
+    const content = (message as { content?: unknown }).content
+    if (!Array.isArray(content)) {
+      continue
+    }
+
+    for (const part of content) {
+      if (!part || typeof part !== "object") {
+        continue
+      }
+
+      const record = part as Record<string, unknown>
+      if (record.type !== "tool-result") {
+        continue
+      }
+
+      const output = record.output
+      if (!output || typeof output !== "object") {
+        continue
+      }
+
+      const meta = (output as { meta?: unknown }).meta
+      if (!meta || typeof meta !== "object") {
+        continue
+      }
+
+      const parsed = ArtifactReferenceSchema.safeParse((meta as { artifact?: unknown }).artifact)
+      if (parsed.success) {
+        artifacts.push(parsed.data)
+      }
+    }
+  }
+
+  return artifacts
+}
+
+function mergeArtifacts(
+  current: SessionState["artifacts"],
+  additional: NonNullable<SessionState["artifacts"]>,
+): SessionState["artifacts"] {
+  if (additional.length === 0) {
+    return current
+  }
+
+  const byId = new Map<string, NonNullable<SessionState["artifacts"]>[number]>()
+  for (const artifact of current ?? []) {
+    byId.set(artifact.id, artifact)
+  }
+  for (const artifact of additional) {
+    byId.set(artifact.id, artifact)
+  }
+
+  return [...byId.values()]
+}
+
 export async function createMinicode(options: CreateMinicodeOptions = {}): Promise<Minicode> {
   const cwd = path.resolve(options.cwd ?? process.cwd())
 
@@ -80,7 +125,11 @@ export async function createMinicode(options: CreateMinicodeOptions = {}): Promi
     sdkVersion: SDK_VERSION,
   })
 
-  const builtins = createBuiltinTools({ cwd, config })
+  const artifactStore = new FsArtifactStore({
+    sessionsDir: config.paths.sessionsDir,
+  })
+
+  const builtins = createBuiltinTools({ cwd, config, artifactStore })
   const composed = composeSdkContributions(builtins, loadedPlugins)
   const sessionRepository = new FsSessionRepository({
     sessionsDir: config.paths.sessionsDir,
@@ -96,7 +145,7 @@ export async function createMinicode(options: CreateMinicodeOptions = {}): Promi
     return instructionParts.join("\n")
   }
 
-  const createRuntimeAgent = (runtime?: RuntimeOverride): Agent => {
+  const createRuntimeAgent = (runtime?: RuntimeOverride, context?: unknown): Agent => {
     const runtimeSelection = resolveRuntime(config, runtime)
     const model =
       options.experimental_modelFactory?.({
@@ -108,6 +157,7 @@ export async function createMinicode(options: CreateMinicodeOptions = {}): Promi
       model,
       tools: composed.tools as unknown as Parameters<typeof createAgent>[0]["tools"],
       instructions: buildInstructions(runtimeSelection),
+      context,
     })
   }
 
@@ -184,33 +234,27 @@ export async function createMinicode(options: CreateMinicodeOptions = {}): Promi
       await persistQueue
     }
 
-    const turn = (request: Parameters<Agent["runTurn"]>[0]): Turn => {
-      const requestMessages = requestMessagesForSession(request)
-      const runtime: RuntimeOverride = {
-        provider: state.provider,
-        model: state.model,
-      }
+    const coreSession = createSession<SessionState>({
+      state,
+      runTurn(request, transcript) {
+        const runtime: RuntimeOverride = {
+          provider: state.provider,
+          model: state.model,
+        }
 
-      const run = createRuntimeAgent(runtime).runTurn(request, state.messages as Array<ModelMessage>)
-
-      const response = run.response.then(async (result) => {
-        const nextState = SessionStateSchema.parse({
-          ...state,
-          updatedAt: Date.now(),
-          messages: [...state.messages, ...requestMessages, ...result.responseMessages],
-          usageTotals: mergeUsageTotals(state.usageTotals, result.totalUsage),
+        return createRuntimeAgent(runtime, { sessionId: state.id }).runTurn(request, transcript as Array<ModelMessage>)
+      },
+      applyResponse({ previousState, nextState, response }) {
+        return SessionStateSchema.parse({
+          ...nextState,
+          usageTotals: mergeUsageTotals(previousState.usageTotals, response.totalUsage),
+          artifacts: mergeArtifacts(nextState.artifacts, extractArtifactReferences(response.responseMessages)),
         })
-
-        await saveState(nextState)
-        return result
-      })
-
-      return {
-        events: run.events,
-        response,
-        abort: run.abort,
-      }
-    }
+      },
+      async onSnapshot(snapshot) {
+        await saveState(snapshot)
+      },
+    })
 
     return {
       get id() {
@@ -230,13 +274,14 @@ export async function createMinicode(options: CreateMinicodeOptions = {}): Promi
       },
 
       send(prompt: string, runOptions?: { abortSignal?: AbortSignal }) {
-        return turn({
-          prompt,
+        return coreSession.send(prompt, {
           abortSignal: runOptions?.abortSignal,
         })
       },
 
-      turn,
+      turn(request) {
+        return coreSession.turn(request)
+      },
 
       snapshot() {
         return cloneState(state)

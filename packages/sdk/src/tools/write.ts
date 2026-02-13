@@ -1,24 +1,25 @@
 import path from "node:path"
 import { mkdir } from "node:fs/promises"
 import { z } from "zod"
-import { success } from "@minicode/core"
-import { defineTool } from "./output"
+import { defineTool, success } from "@minicode/core"
 import { resolveFilePath } from "./shared"
 
-const WriteInputSchema = z.object({
+const WriteInputSchema = z.strictObject({
   filePath: z.string().min(1),
   content: z.string(),
 })
+
+type WriteInput = z.output<typeof WriteInputSchema>
 
 type WriteToolOptions = {
   cwd: string
 }
 
 export function createWriteTool(options: WriteToolOptions) {
-  return defineTool({
+  return defineTool<WriteInput>({
     description: "Write UTF-8 text content to a file",
     inputSchema: WriteInputSchema,
-    execute: async (input, _callOptions) => {
+    execute: async (input: WriteInput, _callOptions) => {
       const filePath = resolveFilePath(options.cwd, input.filePath)
       const parent = path.dirname(filePath)
 
