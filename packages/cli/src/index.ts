@@ -1,10 +1,13 @@
-import { createMinicode } from "@minicode/sdk"
+import { startCli } from "./cli/start"
+import { formatUnknownError } from "./util/errors"
 
-export function runCliBootstrap() {
-  const sdk = createMinicode()
-  process.stdout.write(`minicode scaffold ready (${sdk.status})\n`)
+export async function main(argv: string[] = process.argv.slice(2)) {
+  await startCli(argv)
 }
 
 if (import.meta.main) {
-  runCliBootstrap()
+  main().catch((error) => {
+    process.stderr.write(`[fatal] ${formatUnknownError(error)}\n`)
+    process.exitCode = 1
+  })
 }

@@ -5,7 +5,8 @@
     "module": "ESNext",
     "paths": {
       "*": ["./*"],
-      "@minicode/sdk": ["../sdk/src/index.ts"]
+      "@minicode/sdk": ["../sdk/src/index.ts"],
+      "@minicode/core": ["../core/src/index.ts"]
     }
   }
 }

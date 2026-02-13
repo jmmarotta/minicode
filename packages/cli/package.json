@@ -6,11 +6,14 @@
   "type": "module",
   "module": "src/index.ts",
   "scripts": {
+    "test": "bun test src",
     "typecheck": "tsgo --noEmit",
     "hello": "bun run src/index.ts"
   },
   "dependencies": {
-    "@minicode/sdk": "workspace:*"
+    "@minicode/sdk": "workspace:*",
+    "@opentui/core": "^0.1.79",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
