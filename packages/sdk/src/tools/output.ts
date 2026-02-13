@@ -1,6 +1,6 @@
 import { tool, type Tool, type ToolCallOptions } from "ai"
+import { ToolOutputSchema, executeWithToolOutput, toModelTextOutput, type ToolOutput } from "@minicode/core"
 import type { z } from "zod"
-import { ToolOutputSchema, type ToolOutput } from "./shared"
 
 export function defineTool<Input>(options: {
   description: string
@@ -11,10 +11,7 @@ export function defineTool<Input>(options: {
     description: options.description,
     inputSchema: options.inputSchema,
     outputSchema: ToolOutputSchema,
-    execute: options.execute,
-    toModelOutput: (output: ToolOutput) => ({
-      type: "text",
-      value: output.outputMessage,
-    }),
+    execute: (input, callOptions) => executeWithToolOutput(options.execute, input as Input, callOptions),
+    toModelOutput: toModelTextOutput,
   })
 }

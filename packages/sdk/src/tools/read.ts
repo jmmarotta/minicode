@@ -1,6 +1,7 @@
 import { z } from "zod"
+import { failure, success } from "@minicode/core"
 import { defineTool } from "./output"
-import { failure, resolveFilePath, success, truncateByBytes } from "./shared"
+import { resolveFilePath, truncateByBytes } from "./shared"
 
 const ReadInputSchema = z.object({
   filePath: z.string().min(1),

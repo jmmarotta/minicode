@@ -1,6 +1,7 @@
 import { z } from "zod"
+import { failure, success } from "@minicode/core"
 import { defineTool } from "./output"
-import { failure, success, truncateByBytes } from "./shared"
+import { truncateByBytes } from "./shared"
 
 const BashInputSchema = z.object({
   command: z.string().min(1),

@@ -1,6 +1,7 @@
 import { z } from "zod"
+import { failure, success } from "@minicode/core"
 import { defineTool } from "./output"
-import { failure, resolveFilePath, success } from "./shared"
+import { resolveFilePath } from "./shared"
 
 const EditInputSchema = z.object({
   filePath: z.string().min(1),

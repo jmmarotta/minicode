@@ -8,6 +8,7 @@ export {
   TurnResponseSchema,
   TurnUsageSchema,
 } from "./runner"
+export { ToolOutputSchema, defineTool, executeWithToolOutput, failure, success, toModelTextOutput } from "./tools"
 export type {
   Agent,
   CreateAgentOptions,
@@ -18,3 +19,4 @@ export type {
   TurnRequest,
   TurnResponse,
 } from "./runner"
+export type { ToolOutput } from "./tools"

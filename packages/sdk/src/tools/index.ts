@@ -1,9 +1,9 @@
 import type { ToolSet } from "ai"
+import { ToolOutputSchema, type ToolOutput } from "@minicode/core"
 import type { ResolvedSdkConfig } from "../config/schema"
 import { createBashTool } from "./bash"
 import { createEditTool } from "./edit"
 import { createReadTool } from "./read"
-import { ToolOutputSchema, type ToolOutput } from "./shared"
 import { createWriteTool } from "./write"
 
 type BuiltinToolOptions = {

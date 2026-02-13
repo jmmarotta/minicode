@@ -1,32 +1,4 @@
 import path from "node:path"
-import { z } from "zod"
-
-export const ToolOutputSchema = z.object({
-  ok: z.boolean(),
-  outputMessage: z.string(),
-  details: z.unknown().optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
-})
-
-export type ToolOutput = z.infer<typeof ToolOutputSchema>
-
-export function success(outputMessage: string, details?: unknown, meta?: Record<string, unknown>): ToolOutput {
-  return {
-    ok: true,
-    outputMessage,
-    details,
-    meta,
-  }
-}
-
-export function failure(outputMessage: string, details?: unknown, meta?: Record<string, unknown>): ToolOutput {
-  return {
-    ok: false,
-    outputMessage,
-    details,
-    meta,
-  }
-}
 
 export function resolveFilePath(cwd: string, filePath: string): string {
   if (path.isAbsolute(filePath)) {

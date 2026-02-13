@@ -1,8 +1,9 @@
 import path from "node:path"
 import { mkdir } from "node:fs/promises"
 import { z } from "zod"
+import { success } from "@minicode/core"
 import { defineTool } from "./output"
-import { resolveFilePath, success } from "./shared"
+import { resolveFilePath } from "./shared"
 
 const WriteInputSchema = z.object({
   filePath: z.string().min(1),

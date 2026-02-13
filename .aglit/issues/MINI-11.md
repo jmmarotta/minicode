@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-3084-7000-9b24-547ac0ec722d
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5a1-7000-b771-ab987f1de799
 ---
@@ -34,3 +34,21 @@ projectId: 019c4f3c-e5a1-7000-b771-ab987f1de799
 
 - Unit test success and failure tool paths.
 - Confirm model output excludes details/meta fields.
+
+## Completed
+
+- Added core tool output contract and wrapper utilities in `packages/core/src/tools/output.ts`:
+  - `ToolOutputSchema` / `ToolOutput`
+  - `defineTool(...)`
+  - `executeWithToolOutput(...)` with normalized error handling
+  - `toModelTextOutput(...)` mapping to model-safe text (`outputMessage` only)
+  - `success(...)` / `failure(...)` helpers
+- Added core tool exports in `packages/core/src/tools/index.ts` and public exports in `packages/core/src/index.ts`.
+- Wired SDK built-in tools to use the core tool-output contract and mapping path via `packages/sdk/src/tools/output.ts`.
+- Added unit coverage in `packages/core/src/tools/output.test.ts` for success/failure execution paths and model output filtering.
+
+## Verified
+
+- `bun run lint:check`
+- `bun test`
+- `bun run typecheck`
