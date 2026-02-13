@@ -30,7 +30,7 @@
     "fmt": "oxfmt --write .",
     "fmt:all": "bun run fmt",
     "fmt:check": "oxfmt --check .",
-    "typecheck": "bun turbo typecheck"
+    "typecheck": "bun turbo typecheck --concurrency=2"
   },
   "dependencies": {
     "jiti": "^2.6.1"
