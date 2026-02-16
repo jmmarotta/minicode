@@ -1,5 +1,5 @@
 import { z } from "zod"
-import type { Minicode, ProviderId } from "@minicode/sdk"
+import type { CliAction, Minicode, ProviderId } from "@minicode/sdk"
 import { formatUnknownError } from "../util/errors"
 
 const ProviderIdSchema = z.enum(["openai", "anthropic", "google", "openai-compatible"])
@@ -26,7 +26,8 @@ type CommandAction = {
   usage: string
   allowDuringTurn: boolean
   aliases: string[]
-  run: (context: { runtime: CommandRuntime; args: string[] }) => Promise<void>
+  sourceLabel: string
+  run: (context: { runtime: CommandRuntime; args: string[]; argsText: string }) => Promise<void>
 }
 
 export type CommandPaletteAction = {
@@ -38,7 +39,7 @@ export type CommandPaletteAction = {
 }
 
 export type CommandRuntime = {
-  sdk: Pick<Minicode, "getRuntimeCatalog" | "listSessions" | "openSession">
+  sdk: Pick<Minicode, "getRuntimeCatalog" | "getCliActions" | "listSessions" | "openSession">
   getSession: () => SessionHandle
   setSession: (session: SessionHandle) => void
   print: (text: string) => void
@@ -80,7 +81,7 @@ function parseCommandInput(
   options: {
     allowBare: boolean
   },
-): { id: string; args: string[] } | undefined {
+): { id: string; args: string[]; argsText: string } | undefined {
   const trimmed = input.trim()
   if (!trimmed) {
     return undefined
@@ -92,6 +93,7 @@ function parseCommandInput(
       return {
         id: "help",
         args: [],
+        argsText: "",
       }
     }
 
@@ -100,12 +102,14 @@ function parseCommandInput(
       return {
         id: "help",
         args: [],
+        argsText: "",
       }
     }
 
     return {
       id: id.toLowerCase(),
       args,
+      argsText: args.join(" "),
     }
   }
 
@@ -126,6 +130,7 @@ function parseCommandInput(
   return {
     id: id.toLowerCase(),
     args,
+    argsText: args.join(" "),
   }
 }
 
@@ -195,6 +200,71 @@ function formatSessionSummary(summary: Awaited<ReturnType<Minicode["listSessions
   return `- ${summary.id} ${summary.provider}/${summary.model} updated=${new Date(summary.updatedAt).toISOString()}`
 }
 
+function normalizeCommandKey(value: string): string {
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) {
+    throw new Error("Command id or alias cannot be empty")
+  }
+
+  return normalized
+}
+
+async function switchPluginSession(runtime: CommandRuntime, input: { id?: string; createNew?: boolean }) {
+  if (input.createNew) {
+    const nextSession = await runtime.sdk.openSession({
+      id: input.id,
+      createIfMissing: true,
+    })
+    runtime.setSession(nextSession)
+    return
+  }
+
+  const id = SessionIdSchema.parse(input.id)
+  const nextSession = await runtime.sdk.openSession({
+    id,
+    createIfMissing: false,
+  })
+  runtime.setSession(nextSession)
+}
+
+async function switchPluginRuntime(runtime: CommandRuntime, input: { provider?: ProviderId; model?: string }) {
+  const model = input.model?.trim()
+  const provider = input.provider
+  const current = runtime.getSession()
+
+  if (!provider && !model) {
+    return
+  }
+
+  if (provider && model) {
+    assertModelExists(runtime, provider, model)
+  }
+
+  if (provider && provider !== current.provider) {
+    const nextSession = await runtime.sdk.openSession({
+      runtime: {
+        provider,
+        model,
+      },
+    })
+    runtime.setSession(nextSession)
+    return
+  }
+
+  if (model) {
+    assertModelExists(runtime, provider ?? current.provider, model)
+  }
+
+  const nextSession = await runtime.sdk.openSession({
+    id: current.id,
+    runtime: {
+      provider,
+      model,
+    },
+  })
+  runtime.setSession(nextSession)
+}
+
 function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
   const actions: CommandAction[] = [
     {
@@ -204,6 +274,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "new [--provider <id>] [--model <id>]",
       allowDuringTurn: false,
       aliases: ["n"],
+      sourceLabel: "builtin:new",
       async run({ args }) {
         const parsed = parseNewSessionArgs(args)
         const current = runtime.getSession()
@@ -229,6 +300,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "sessions",
       allowDuringTurn: true,
       aliases: ["ls"],
+      sourceLabel: "builtin:sessions",
       async run() {
         const sessions = await runtime.sdk.listSessions()
         if (sessions.length === 0) {
@@ -246,6 +318,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "use <id>",
       allowDuringTurn: false,
       aliases: ["session"],
+      sourceLabel: "builtin:use",
       async run({ args }) {
         const id = SessionIdSchema.parse(args.join(" "))
         const nextSession = await runtime.sdk.openSession({
@@ -264,6 +337,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "model <id>",
       allowDuringTurn: false,
       aliases: ["m"],
+      sourceLabel: "builtin:model",
       async run({ args }) {
         const model = ModelIdSchema.parse(args.join(" "))
         const current = runtime.getSession()
@@ -288,6 +362,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "abort",
       allowDuringTurn: true,
       aliases: [],
+      sourceLabel: "builtin:abort",
       async run() {
         const didAbort = runtime.abortActiveTurn()
         runtime.print(didAbort ? "[abort] requested\n" : "[abort] no active turn\n")
@@ -300,6 +375,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "help",
       allowDuringTurn: true,
       aliases: ["?"],
+      sourceLabel: "builtin:help",
       async run() {
         runtime.print(renderHelp(actions))
       },
@@ -311,6 +387,7 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
       usage: "exit",
       allowDuringTurn: true,
       aliases: ["quit", "q"],
+      sourceLabel: "builtin:exit",
       async run() {
         runtime.requestExit()
       },
@@ -322,22 +399,59 @@ function createBuiltInActions(runtime: CommandRuntime): CommandAction[] {
 
 function createActionLookup(actions: CommandAction[]): Map<string, CommandAction> {
   const lookup = new Map<string, CommandAction>()
+  const owners = new Map<string, string>()
 
   for (const action of actions) {
-    const ids = [action.id, ...action.aliases]
-    for (const id of ids) {
-      if (lookup.has(id)) {
-        throw new Error(`Duplicate command id or alias '${id}'`)
+    const keys = [action.id, ...action.aliases].map((value) => normalizeCommandKey(value))
+    for (const key of keys) {
+      if (lookup.has(key)) {
+        const owner = owners.get(key) ?? "unknown"
+        throw new Error(`Duplicate command id or alias '${key}' (${action.sourceLabel} conflicts with ${owner})`)
       }
-      lookup.set(id, action)
+      lookup.set(key, action)
+      owners.set(key, action.sourceLabel)
     }
   }
 
   return lookup
 }
 
+function createPluginActions(runtime: CommandRuntime): CommandAction[] {
+  const pluginActions = runtime.sdk.getCliActions()
+
+  return pluginActions.map((action: CliAction) => {
+    const actionId = normalizeCommandKey(action.id)
+    const aliases = action.aliases.map((alias) => normalizeCommandKey(alias))
+
+    return {
+      id: actionId,
+      title: action.title,
+      description: action.description ?? `Plugin action from ${action.sourcePluginId}`,
+      usage: `${actionId} [args]`,
+      allowDuringTurn: action.allowDuringTurn,
+      aliases,
+      sourceLabel: `plugin:${action.sourcePluginId}`,
+      async run({ argsText }) {
+        await action.run({
+          args: argsText,
+          print: runtime.print,
+          abortTurn() {
+            runtime.abortActiveTurn()
+          },
+          switchSession(input) {
+            return switchPluginSession(runtime, input)
+          },
+          switchRuntime(input) {
+            return switchPluginRuntime(runtime, input)
+          },
+        })
+      },
+    } satisfies CommandAction
+  })
+}
+
 export function createCommandRouter(runtime: CommandRuntime): CommandRouter {
-  const actions = createBuiltInActions(runtime)
+  const actions = [...createBuiltInActions(runtime), ...createPluginActions(runtime)]
   const actionLookup = createActionLookup(actions)
 
   const execute = async (input: string, options: { allowBare: boolean }): Promise<boolean> => {
@@ -361,6 +475,7 @@ export function createCommandRouter(runtime: CommandRuntime): CommandRouter {
       await action.run({
         runtime,
         args: parsed.args,
+        argsText: parsed.argsText,
       })
     } catch (error) {
       runtime.print(`[error] ${formatUnknownError(error)}\n`)

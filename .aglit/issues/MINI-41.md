@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-34c5-7000-9ce7-4f74140ccdd6
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 ---
@@ -34,3 +34,17 @@ projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 
 - Manual test plugin actions via slash and palette triggers.
 - Add integration test for shared routing path and context injection.
+
+## Completed
+
+- Added SDK `getCliActions()` to expose composed plugin CLI actions for CLI routing in `packages/sdk/src/types.ts` and `packages/sdk/src/sdk.ts`.
+- Extended CLI command router in `packages/cli/src/app/commands.ts` to merge plugin actions after built-ins and route both slash and palette through the same execution path.
+- Added plugin action alias resolution and execution context wiring (`print`, `abortTurn`, `switchSession`, `switchRuntime`).
+- Added fast-fail duplicate command id/alias detection across built-in and plugin actions.
+- Kept plugin action failures isolated via existing command execution error boundary.
+
+## Verified
+
+- `bun test packages/cli/src/app/commands.test.ts`
+- `bun test packages/cli/src`
+- `bun test packages/sdk/src/plugins packages/sdk/src/sdk.test.ts`

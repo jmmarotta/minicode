@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-33eb-7000-8c61-e38ca32411cf
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 ---
@@ -34,3 +34,17 @@ projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 
 - Run CLI package tests and confirm all new coverage passes.
 - Confirm failures produce clear diagnostics for routing/queue regressions.
+
+## Completed
+
+- Added CLI parsing/validation/startup tests in:
+  - `packages/cli/src/cli/args.test.ts`
+  - `packages/cli/src/cli/schema.test.ts`
+  - `packages/cli/src/cli/start.test.ts`
+- Added queue semantics tests in `packages/cli/src/app/queue.test.ts`.
+- Added command routing tests in `packages/cli/src/app/commands.test.ts`, including plugin action slash/palette routing, helper context usage, and failure isolation.
+- Added event rendering stability tests in `packages/cli/src/ui/event-renderer.test.ts`.
+
+## Verified
+
+- `bun test packages/cli/src`

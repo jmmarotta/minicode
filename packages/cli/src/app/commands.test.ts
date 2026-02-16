@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import type { ProviderId } from "@minicode/sdk"
+import type { CliAction, ProviderId } from "@minicode/sdk"
 import { createCommandRouter } from "./commands"
 
 type SessionHandle = {
@@ -8,7 +8,7 @@ type SessionHandle = {
   model: string
 }
 
-function createCommandHarness(options: { active?: boolean } = {}) {
+function createCommandHarness(options: { active?: boolean; pluginActions?: CliAction[] } = {}) {
   const printed: string[] = []
   const openSessionCalls: unknown[] = []
 
@@ -46,6 +46,10 @@ function createCommandHarness(options: { active?: boolean } = {}) {
         return {
           providers,
         }
+      },
+
+      getCliActions() {
+        return options.pluginActions ?? []
       },
 
       async listSessions() {
@@ -159,5 +163,115 @@ describe("command router", () => {
     await harness.router.handlePaletteInput("sessions")
 
     expect(harness.printed.join("")).toContain("[sessions]")
+  })
+
+  test("routes plugin actions through slash with shared execution context", async () => {
+    const harness = createCommandHarness({
+      pluginActions: [
+        {
+          id: "plugin-echo",
+          title: "Plugin echo",
+          description: "Echo args",
+          aliases: ["pecho"],
+          allowDuringTurn: true,
+          async run(context) {
+            context.print(`[plugin] ${context.args}\n`)
+          },
+          sourcePluginId: "demo.plugin",
+          sourceReference: "demo-plugin",
+        },
+      ],
+    })
+
+    await harness.router.handleSlashInput("/plugin-echo hello world")
+
+    expect(harness.printed.join("")).toContain("[plugin] hello world")
+  })
+
+  test("routes plugin action aliases through palette", async () => {
+    const harness = createCommandHarness({
+      pluginActions: [
+        {
+          id: "plugin-runtime",
+          title: "Plugin runtime",
+          aliases: ["pruntime"],
+          allowDuringTurn: false,
+          async run(context) {
+            await context.switchRuntime({ model: "claude-3-7-sonnet-latest" })
+          },
+          sourcePluginId: "demo.plugin",
+          sourceReference: "demo-plugin",
+        },
+      ],
+    })
+
+    await harness.router.handlePaletteInput("pruntime")
+
+    expect(harness.getSession().model).toBe("claude-3-7-sonnet-latest")
+  })
+
+  test("isolates plugin action failures", async () => {
+    const harness = createCommandHarness({
+      pluginActions: [
+        {
+          id: "plugin-fail",
+          title: "Plugin fail",
+          aliases: [],
+          allowDuringTurn: true,
+          async run() {
+            throw new Error("plugin blew up")
+          },
+          sourcePluginId: "demo.plugin",
+          sourceReference: "demo-plugin",
+        },
+      ],
+    })
+
+    await harness.router.handleSlashInput("/plugin-fail")
+
+    expect(harness.printed.join("")).toContain("plugin blew up")
+  })
+
+  test("provides abortTurn and switchSession helpers to plugin actions", async () => {
+    const harness = createCommandHarness({
+      active: true,
+      pluginActions: [
+        {
+          id: "plugin-control",
+          title: "Plugin control",
+          aliases: [],
+          allowDuringTurn: true,
+          async run(context) {
+            context.abortTurn()
+            await context.switchSession({ createNew: true })
+          },
+          sourcePluginId: "demo.plugin",
+          sourceReference: "demo-plugin",
+        },
+      ],
+    })
+
+    await harness.router.handleSlashInput("/plugin-control")
+
+    expect(harness.getAbortCount()).toBe(1)
+    expect(harness.getSession().id).toContain("new-")
+  })
+
+  test("fails fast on builtin and plugin command conflicts", () => {
+    expect(() =>
+      createCommandHarness({
+        pluginActions: [
+          {
+            id: "model",
+            title: "Conflicting action",
+            aliases: [],
+            allowDuringTurn: true,
+            async run() {},
+            sourcePluginId: "demo.plugin",
+            sourceReference: "demo-plugin",
+          },
+        ],
+      }),
+    ).toThrow("Duplicate command id or alias")
   })
 })
