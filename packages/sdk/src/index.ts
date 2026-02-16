@@ -4,6 +4,8 @@ export { PluginsConfigSchema, ProviderIdSchema, ResolvedSdkConfigSchema, SdkConf
 export type { PluginReference, PluginsConfig, ProviderId, ResolvedSdkConfig, SdkConfig } from "./config/schema"
 
 export type {
+  CliAction,
+  CliActionContext,
   CreateMinicodeOptions,
   Minicode,
   OpenSessionOptions,

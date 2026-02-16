@@ -1,6 +1,7 @@
 import type { LanguageModel, ModelMessage, ToolSet } from "ai"
 import type { Agent, Turn, TurnRequest } from "@minicode/core"
 import type { PluginReference, PluginsConfig, ProviderId, ResolvedSdkConfig, SdkConfig } from "./config/schema"
+import type { ComposedCliAction, PluginCliActionContext } from "./plugins/types"
 import type { resolveRuntime } from "./providers/factory"
 import type { SessionState, SessionSummary } from "./session/schema"
 
@@ -45,6 +46,9 @@ export type PluginMetadata = {
   version?: string
 }
 
+export type CliActionContext = PluginCliActionContext
+export type CliAction = ComposedCliAction
+
 export interface Session {
   readonly id: string
   readonly cwd: string
@@ -59,6 +63,7 @@ export interface Minicode {
   readonly config: ResolvedSdkConfig
   getRuntimeCatalog(): RuntimeCatalog
   getLoadedPlugins(): Array<PluginMetadata>
+  getCliActions(): Array<CliAction>
   getTools(): ToolSet
   createAgent(runtime?: RuntimeOverride): Agent
   runTurn(input: { request: TurnRequest; transcript?: Array<ModelMessage>; runtime?: RuntimeOverride }): Turn

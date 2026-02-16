@@ -1,5 +1,5 @@
 import type { ToolSet } from "ai"
-import type { PluginReference } from "../config/schema"
+import type { PluginReference, ProviderId } from "../config/schema"
 
 export type PluginConfig = Record<string, unknown>
 
@@ -15,10 +15,30 @@ export type PluginSetupContext = {
   }
 }
 
+export type PluginCliActionContext = {
+  args: string
+  print: (text: string) => void
+  abortTurn: () => void
+  switchSession: (input: { id?: string; createNew?: boolean }) => Promise<void>
+  switchRuntime: (input: { provider?: ProviderId; model?: string }) => Promise<void>
+}
+
+export type PluginCliAction = {
+  id: string
+  title: string
+  description?: string
+  aliases?: string[]
+  allowDuringTurn?: boolean
+  run: (context: PluginCliActionContext) => Promise<void> | void
+}
+
 export type PluginContribution = {
   sdk?: {
     tools?: ToolSet
     instructionFragments?: string[]
+  }
+  cli?: {
+    actions?: PluginCliAction[]
   }
 }
 
@@ -36,4 +56,15 @@ export type LoadedPlugin = {
   normalizedReference: PluginReference
   plugin: MinicodePlugin
   contribution: PluginContribution
+}
+
+export type ComposedCliAction = {
+  id: string
+  title: string
+  description?: string
+  aliases: string[]
+  allowDuringTurn: boolean
+  run: PluginCliAction["run"]
+  sourcePluginId: string
+  sourceReference: PluginReference
 }

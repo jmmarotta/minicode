@@ -240,6 +240,18 @@ export default function pluginFactory() {
             }),
           },
         },
+        cli: {
+          actions: [
+            {
+              id: "package-hello",
+              title: "Package hello",
+              aliases: ["pkg-hi"],
+              run(ctx) {
+                ctx.print("hello from package")
+              },
+            },
+          ],
+        },
       }
     },
   }
@@ -276,6 +288,9 @@ export default function pluginFactory() {
 
       const tools = sdk.getTools()
       expect(Object.hasOwn(tools, "package_echo")).toBe(true)
+
+      const cliActions = sdk.getCliActions()
+      expect(cliActions.map((action) => action.id)).toContain("package-hello")
     } finally {
       await rm(packageDir, { recursive: true, force: true })
       await rm(cwd, { recursive: true, force: true })

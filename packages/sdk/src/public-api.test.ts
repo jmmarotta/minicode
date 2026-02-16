@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import * as sdkPublicApi from "./index"
 import type {
+  CliAction,
+  CliActionContext,
   CoreSession,
   CoreSessionState,
   CreateMinicodeOptions,
@@ -25,6 +27,8 @@ import type {
 } from "./index"
 
 type PublicTypeImportSmoke = {
+  cliAction: CliAction
+  cliActionContext: CliActionContext
   minicode: Minicode
   session: Session
   sessionState: SessionState

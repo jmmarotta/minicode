@@ -304,6 +304,13 @@ export async function createMinicode(options: CreateMinicodeOptions = {}): Promi
       }))
     },
 
+    getCliActions() {
+      return composed.cliActions.map((action) => ({
+        ...action,
+        aliases: [...action.aliases],
+      }))
+    },
+
     getTools() {
       return composed.tools
     },

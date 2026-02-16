@@ -114,6 +114,50 @@ export default function badPluginFactory() {
       expect(badContractError).toBeInstanceOf(Error)
       expect((badContractError as Error).message).toContain("[validate]")
 
+      const badActionPath = path.join(cwd, "bad-action-plugin.mjs")
+      await Bun.write(
+        badActionPath,
+        `
+export default function badActionPluginFactory() {
+  return {
+    id: "bad.action",
+    apiVersion: 1,
+    setup() {
+      return {
+        cli: {
+          actions: [
+            {
+              id: "broken",
+              title: "Broken",
+              run: "not-a-function",
+            },
+          ],
+        },
+      }
+    },
+  }
+}
+`,
+      )
+
+      let badActionError: unknown
+      try {
+        await loadPlugins({
+          plugins: {
+            [pathToFileURL(badActionPath).toString()]: {},
+          },
+          cwd,
+          globalConfigDir: cwd,
+          sdkVersion: "0.1.0",
+        })
+      } catch (error) {
+        badActionError = error
+      }
+
+      expect(badActionError).toBeInstanceOf(Error)
+      expect((badActionError as Error).message).toContain("[validate]")
+      expect((badActionError as Error).message).toContain("actions")
+
       const dupAPath = path.join(cwd, "dup-a.mjs")
       const dupBPath = path.join(cwd, "dup-b.mjs")
 

@@ -6,7 +6,24 @@ const OptionalFunctionSchema = z.custom<unknown>((value) => value === undefined 
   message: "Expected function",
 })
 
+const RequiredFunctionSchema = z.custom<unknown>((value) => typeof value === "function", {
+  message: "Expected function",
+})
+
 export const PluginToolsSchema = z.record(z.string(), z.unknown())
+
+export const PluginCliActionSchema = z.looseObject({
+  id: NonEmptyStringSchema,
+  title: NonEmptyStringSchema,
+  description: NonEmptyStringSchema.optional(),
+  aliases: z.array(NonEmptyStringSchema).optional(),
+  allowDuringTurn: z.boolean().optional(),
+  run: RequiredFunctionSchema,
+})
+
+export const PluginCliContributionSchema = z.looseObject({
+  actions: z.array(PluginCliActionSchema).optional(),
+})
 
 export const PluginSdkContributionSchema = z.looseObject({
   tools: PluginToolsSchema.optional(),
@@ -15,6 +32,7 @@ export const PluginSdkContributionSchema = z.looseObject({
 
 export const PluginContributionSchema = z.looseObject({
   sdk: PluginSdkContributionSchema.optional(),
+  cli: PluginCliContributionSchema.optional(),
 })
 
 export const MinicodePluginSchema = z.looseObject({
