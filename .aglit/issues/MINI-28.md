@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-32ec-7000-b620-e251e9ca7ca8
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 ---
@@ -34,3 +34,13 @@ projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 
 - Manual test multiline editing and submit behavior.
 - Manual test resize scenarios for footer stability.
+
+## Completed
+
+- Implemented split-footer prompt UI in `packages/cli/src/ui/footer.ts` and wired it in `packages/cli/src/app/app.ts` with fixed footer rendering.
+- Added multiline input handling where `Enter` inserts newline and `Ctrl+Enter` submits via textarea key bindings.
+- Added footer status messaging for ready/streaming and palette visibility.
+
+## Verified
+
+- `bun test packages/cli/src`

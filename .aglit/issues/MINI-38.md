@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-3459-7000-9cc7-feba730e27eb
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 ---
@@ -34,3 +34,15 @@ projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 
 - Test loading of valid plugin modules.
 - Test invalid export/factory/plugin-shape cases and confirm diagnostics.
+
+## Completed
+
+- Implemented plugin module loading + default factory validation in `packages/sdk/src/plugins/load.ts`.
+- Added stage-aware diagnostics (`import`, `factory`, `setup`, `validate`, `compose`) with normalized reference context.
+- Added runtime contract validation for plugin shape and setup contribution via plugin schemas.
+- Added coverage for valid modules and invalid contract/factory scenarios in `packages/sdk/src/plugins/load.test.ts`.
+
+## Verified
+
+- `bun test packages/sdk/src/plugins/load.test.ts`
+- `bun test packages/sdk/src/plugins packages/sdk/src/sdk.test.ts`

@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-3311-7000-857b-7308befb2f22
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 ---
@@ -34,3 +34,14 @@ projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 
 - Add tests for queue ordering and in-flight behavior.
 - Manual stress test with rapid submissions during streaming.
+
+## Completed
+
+- Implemented centralized queue ownership in `packages/cli/src/app/queue.ts` with one-active-turn semantics and FIFO pending prompts.
+- Integrated queue transitions into app coordination flow in `packages/cli/src/app/app.ts` (`beginOrQueue`, `settleActive`, dequeue logging).
+- Added deterministic queue behavior tests in `packages/cli/src/app/queue.test.ts`.
+
+## Verified
+
+- `bun test packages/cli/src/app/queue.test.ts`
+- `bun test packages/cli/src`

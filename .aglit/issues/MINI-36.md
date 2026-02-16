@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-340f-7000-b695-6495036ce51b
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 ---
@@ -34,3 +34,14 @@ projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 
 - Typecheck plugin modules against new contract types.
 - Validate sample plugin payloads through schemas.
+
+## Completed
+
+- Added foundational plugin contract types in `packages/sdk/src/plugins/types.ts` (`MinicodePlugin`, contribution/setup context, loaded plugin metadata).
+- Added plugin schema boundaries in `packages/sdk/src/plugins/schema.ts` for plugin objects and contribution envelopes.
+- Integrated schema/type usage in loader and composition modules.
+
+## Verified
+
+- `bun test packages/sdk/src/plugins`
+- `bun run typecheck`

@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-335a-7000-8627-c57e7ade2131
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 ---
@@ -34,3 +34,15 @@ projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 
 - Manual test each action through both palette and slash paths.
 - Add routing tests to ensure consistent resolution behavior.
+
+## Completed
+
+- Implemented shared action execution layer in `packages/cli/src/app/commands.ts` used by both slash (`handleSlashInput`) and palette (`handlePaletteInput`) paths.
+- Added built-in actions covering new session, session switching, model switching, abort, help, and exit.
+- Implemented footer-embedded palette UI in `packages/cli/src/ui/palette.ts` and connected it in `packages/cli/src/ui/footer.ts` and `packages/cli/src/app/app.ts`.
+- Added routing coverage in `packages/cli/src/app/commands.test.ts`.
+
+## Verified
+
+- `bun test packages/cli/src/app/commands.test.ts`
+- `bun test packages/cli/src`

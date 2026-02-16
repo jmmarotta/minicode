@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-3433-7000-bd1c-78e38cd70de4
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 ---
@@ -34,3 +34,14 @@ projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 
 - Test normalization fixtures for package and file URL edge cases.
 - Confirm duplicate normalized references fail fast with clear errors.
+
+## Completed
+
+- Implemented deterministic plugin reference normalization in `packages/sdk/src/plugins/normalize.ts`.
+- Preserved trimmed package specifier identity and canonicalized file URL references.
+- Integrated duplicate-normalized-reference detection into the plugin load pipeline (`packages/sdk/src/plugins/load.ts`).
+- Added normalization and duplicate detection tests in `packages/sdk/src/plugins/normalize.test.ts` and `packages/sdk/src/plugins/load.test.ts`.
+
+## Verified
+
+- `bun test packages/sdk/src/plugins`

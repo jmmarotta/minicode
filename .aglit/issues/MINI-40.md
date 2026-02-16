@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-34a1-7000-9971-0342545ac215
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 ---
@@ -34,3 +34,14 @@ projectId: 019c4f3c-e605-7000-aa39-67c68535a0b1
 
 - Call `getLoadedPlugins()` in a smoke flow and verify metadata shape.
 - Confirm metadata ordering matches plugin configuration order.
+
+## Completed
+
+- Added public SDK metadata type (`PluginMetadata`) and interface method `getLoadedPlugins()` in `packages/sdk/src/types.ts`.
+- Implemented loaded plugin metadata projection in `packages/sdk/src/sdk.ts` using normalized references and plugin id/version.
+- Kept metadata payload minimal and internal-loader-details-free.
+
+## Verified
+
+- `bun test packages/sdk/src/sdk.test.ts`
+- `bun test packages/sdk/src/public-api.test.ts`

@@ -1,7 +1,7 @@
 ---
 schema: aglit.issue.md.v1
 id: 019c4f3d-33a2-7000-9345-5b4d7b2ac56d
-status: planned
+status: done
 priority: medium
 projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 ---
@@ -34,3 +34,14 @@ projectId: 019c4f3c-e5e4-7000-b372-e326a7e98a9c
 
 - Manual test creating new sessions across multiple providers.
 - Confirm resumed old session retains original provider runtime.
+
+## Completed
+
+- Implemented new-session runtime selection in `packages/cli/src/app/commands.ts` with `--provider` and `--model` handling.
+- Wired creation flow to `sdk.openSession({ runtime })` for provider/model override selection on new sessions.
+- Added runtime catalog validation and session switch feedback printing.
+
+## Verified
+
+- `bun test packages/cli/src/app/commands.test.ts`
+- `bun test packages/sdk/src/sdk.test.ts`
